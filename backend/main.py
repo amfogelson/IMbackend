@@ -34,6 +34,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=ICON_DIR), name="static")
 app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")
+app.mount("/icons", StaticFiles(directory=ICON_DIR), name="icons")
 
 # --- Pydantic Model ---
 class UpdateColorRequest(BaseModel):
