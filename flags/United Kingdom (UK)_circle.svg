@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 118.973 79.386">
+  <defs>
+    <clipPath id="clippath">
+      <path d="M20.116,39.692c0,21.862,17.723,39.586,39.585,39.586s39.585-17.724,39.585-39.586S81.563.108,59.701.108,20.116,17.831,20.116,39.692Z" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g clip-path="url(#clippath)">
+      <g>
+        <rect width="118.973" height="79.204" fill="#2a3887"/>
+        <polygon points="0 70.339 105.006 0 118.973 0 118.973 8.969 13.983 79.137 0 79.137 0 70.339" fill="#fff"/>
+        <polygon points="118.973 70.339 13.983 0 0 0 0 8.969 105.006 79.137 118.973 79.137 118.973 70.339" fill="#fff"/>
+        <rect y="26.208" width="118.973" height="27.214" fill="#fff"/>
+        <rect x="49.816" width="19.769" height="79.386" fill="#fff"/>
+        <rect x="53.378" width="12.231" height="79.137" fill="#ef4848"/>
+        <rect y="31.446" width="118.973" height="16.248" fill="#ef4848"/>
+        <polygon points="0 6.015 0 0 38.111 25.616 29.326 25.616 0 6.015" fill="#ef4848"/>
+        <polygon points="79.549 52.763 88.214 52.763 118.973 73.294 118.973 79.137 79.549 52.763" fill="#ef4848"/>
+        <polygon points="110.056 0 118.973 0 80.615 25.616 71.515 25.616 110.056 0" fill="#ef4848"/>
+        <polygon points="0 79.137 39.613 52.763 48.314 52.763 9.062 79.137 0 79.137" fill="#ef4848"/>
+      </g>
+    </g>
+  </g>
+</svg>

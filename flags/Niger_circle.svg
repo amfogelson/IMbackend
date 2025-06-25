@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 119.038 79.243">
+  <defs>
+    <clipPath id="clippath">
+      <path d="M20.171,39.657c0,21.862,17.723,39.586,39.585,39.586s39.584-17.724,39.584-39.586S81.618.073,59.756.073,20.171,17.796,20.171,39.657Z" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g clip-path="url(#clippath)">
+      <g>
+        <rect x=".194" width="118.844" height="79.168" fill="#fff"/>
+        <rect width="119.038" height="26.229" fill="#e95a24"/>
+        <rect x=".194" y="52.94" width="118.844" height="26.228" fill="#00ae4d"/>
+        <path d="M48.775,39.448c0,6.064,4.916,10.981,10.98,10.981s10.981-4.917,10.981-10.981-4.916-10.981-10.981-10.981-10.98,4.917-10.98,10.981Z" fill="#e95a24"/>
+      </g>
+    </g>
+  </g>
+</svg>

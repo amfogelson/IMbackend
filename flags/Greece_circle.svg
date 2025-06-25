@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 118.972 79.284">
+  <defs>
+    <clipPath id="clippath">
+      <path d="M0,39.584c0,21.862,17.723,39.586,39.585,39.586s39.585-17.724,39.585-39.586S61.447,0,39.585,0,0,17.723,0,39.584Z" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g clip-path="url(#clippath)">
+      <g>
+        <rect y=".112" width="44.146" height="43.833" fill="#175fad"/>
+        <rect x="42.219" y=".112" width="76.753" height="8.955" fill="#175fad"/>
+        <rect x="44.146" y="17.558" width="74.826" height="8.715" fill="#175fad"/>
+        <rect x="42.219" y="35.226" width="76.753" height="8.719" fill="#175fad"/>
+        <rect y="52.898" width="118.972" height="8.717" fill="#175fad"/>
+        <g>
+          <rect x="17.392" y=".112" width="9.179" height="43.833" fill="#fff"/>
+          <rect y="17.558" width="44.146" height="8.715" fill="#fff"/>
+          <rect x="44.146" y="9.066" width="74.826" height="8.662" fill="#fff"/>
+          <rect x="44.146" y="26.273" width="74.826" height="8.953" fill="#fff"/>
+          <rect y="43.945" width="118.972" height="8.953" fill="#fff"/>
+          <rect y="61.615" width="118.972" height="8.952" fill="#fff"/>
+        </g>
+        <rect y="70.567" width="118.972" height="8.717" fill="#175fad"/>
+      </g>
+    </g>
+  </g>
+</svg>

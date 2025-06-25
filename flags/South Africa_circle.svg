@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 118.973 79.17">
+  <defs>
+    <clipPath id="clippath">
+      <circle cx="55.486" cy="39.585" r="39.585" transform="translate(-2.319 75.699) rotate(-67.5)" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g clip-path="url(#clippath)">
+      <g>
+        <rect y=".017" width="118.973" height="79.138" fill="#de3930"/>
+        <polygon points="24.026 .018 63.324 26.389 118.973 26.389 118.973 31.675 61.662 31.675 14.411 .018 24.026 .018" fill="#fff"/>
+        <polygon points="14.411 .018 0 .018 0 9.617 45.042 39.584 0 69.692 0 79.153 14.411 79.153 61.662 47.431 118.973 47.532 118.973 31.675 61.662 31.675 14.411 .018" fill="#007b4e"/>
+        <polygon points="0 9.617 45.042 39.584 0 69.692 0 63.391 35.426 39.584 0 15.847 0 9.617" fill="#fdb516"/>
+        <polygon points="0 15.847 35.426 39.584 0 63.391 0 15.847"/>
+        <polygon points="14.411 79.153 61.662 47.431 118.973 47.532 118.973 52.615 63.444 52.818 23.909 79.153 14.411 79.153" fill="#fff"/>
+        <polygon points="23.909 79.153 118.973 79.153 118.973 52.615 63.444 52.818 23.909 79.153" fill="#293689"/>
+      </g>
+    </g>
+  </g>
+</svg>

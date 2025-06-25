@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 33.945 22.63">
+  <defs><clipPath id="circleClip"><circle cx="16.9725" cy="11.315" r="11.315" /></clipPath></defs><g clip-path="url(#circleClip)"><g id="_&#209;&#235;&#238;&#233;_1" data-name="&#209;&#235;&#238;&#233; 1">
+    <g>
+      <rect width="33.945" height="22.63" fill="#fed700" />
+      <polygon points="28.88 0 33.945 0 33.945 3.377 5.065 22.63 0 22.63 0 19.254 28.88 0" fill-rule="evenodd" />
+      <polygon points="33.945 5.295 33.945 22.63 7.943 22.63 33.945 5.295" fill="red" fill-rule="evenodd" />
+      <polygon points="0 0 26.002 0 0 17.335 0 0" fill="#007c29" fill-rule="evenodd" />
+      <polygon points="8.002 16.56 9.706 15.423 9.15 13.451 10.758 14.719 12.462 13.581 11.75 15.502 13.361 16.772 11.311 16.687 10.605 18.613 10.048 16.639 8.002 16.56" fill="#fff" fill-rule="evenodd" />
+      <polygon points="20.794 8.016 22.497 6.878 21.941 4.906 23.55 6.175 25.253 5.037 24.542 6.957 26.152 8.227 24.103 8.142 23.396 10.068 22.84 8.094 20.794 8.016" fill="#fff" fill-rule="evenodd" />
+    </g>
+  </g>
+</g></svg>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 118.973 79.233">
+  <defs>
+    <clipPath id="clippath">
+      <path d="M19.901,39.584c0,21.862,17.723,39.586,39.585,39.586s39.585-17.724,39.585-39.586S81.349,0,59.486,0,19.901,17.723,19.901,39.584Z" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g clip-path="url(#clippath)">
+      <g>
+        <rect y="52.845" width="118.973" height="26.389" fill="#3a3838"/>
+        <rect y="26.454" width="118.973" height="26.391" fill="#fff"/>
+        <rect y=".065" width="118.973" height="26.389" fill="#ef4848"/>
+        <polygon points="38.609 32.073 40.687 37.896 46.773 37.92 42.053 41.453 43.715 47.097 38.67 43.879 34.01 47.097 35.641 41.592 30.715 37.896 36.712 37.896 38.609 32.073" fill="#0e8441"/>
+        <polygon points="79.216 32.073 81.294 37.896 87.378 37.92 82.66 41.453 84.321 47.097 79.272 43.879 74.614 47.097 76.243 41.592 71.321 37.896 77.316 37.896 79.216 32.073" fill="#0e8441"/>
+      </g>
+    </g>
+  </g>
+</svg>

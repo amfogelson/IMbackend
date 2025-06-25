@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33.945 22.63">
+  <g id="_Ñëîé_1" data-name="Ñëîé 1">
+    <g>
+      <g>
+        <rect width="33.945" height="22.63" fill="#fff"/>
+        <rect y="6.789" width="33.945" height="9.052" fill="red"/>
+        <rect width="33.945" height="4.526" fill="#007c29"/>
+        <rect y="18.105" width="33.945" height="4.526" fill="#007c29"/>
+      </g>
+      <polygon points="12.683 10.369 15.96 10.369 16.973 7.253 17.986 10.369 21.262 10.369 18.61 12.292 19.624 15.412 16.973 13.478 14.321 15.412 15.335 12.292 12.683 10.369" fill="#fed700" fill-rule="evenodd"/>
+    </g>
+  </g>
+</svg>

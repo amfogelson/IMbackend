@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33.946 22.63">
+  <g id="_Ñëîé_1" data-name="Ñëîé 1">
+    <g>
+      <g>
+        <rect width="33.946" height="22.63" fill="#fff"/>
+        <polygon points="0 0 13.241 0 0 8.827 0 0" fill="#fed700" fill-rule="evenodd"/>
+        <polygon points="33.946 0 33.946 22.63 0 22.63 33.946 0" fill="#039" fill-rule="evenodd"/>
+      </g>
+      <g>
+        <path d="M8.981,4.584l.444-.777.444.777c2.342.211,4.206,2.076,4.418,4.417l.777.444-.777.444c-.211,2.342-2.076,4.206-4.418,4.418l-.444.777-.444-.777c-2.341-.211-4.206-2.076-4.417-4.418l-.777-.444.777-.444c.211-2.342,2.076-4.206,4.417-4.417Z" fill-rule="evenodd"/>
+        <path d="M9.425,5.199c2.345,0,4.246,1.901,4.246,4.247s-1.901,4.247-4.246,4.247-4.247-1.901-4.247-4.247,1.901-4.247,4.247-4.247Z" fill="#fff" fill-rule="evenodd"/>
+        <polygon points="9.425 10.847 6.99 10.847 9.425 6.631 11.86 10.847 9.425 10.847" fill="red" fill-rule="evenodd"/>
+        <polygon points="9.425 8.045 6.99 8.045 9.425 12.261 11.86 8.045 9.425 8.045" fill="red" fill-rule="evenodd"/>
+      </g>
+    </g>
+  </g>
+</svg>

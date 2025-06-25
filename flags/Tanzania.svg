@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 118.972 79.168">
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect width="118.972" height="79.168" fill="#2b8742"/>
+      <polygon points="0 59.898 0 65.971 98.389 0 89.479 0 0 59.898" fill="#fce93a"/>
+      <polygon points="0 65.971 0 79.168 20.361 79.168 118.972 13.359 118.972 0 98.389 0 0 65.971"/>
+      <polygon points="20.361 79.168 29.894 79.168 118.972 19.272 118.972 13.359 20.361 79.168" fill="#fce93a"/>
+      <polygon points="29.894 79.168 118.972 19.272 118.972 79.168 29.894 79.168" fill="#35589f"/>
+    </g>
+  </g>
+</svg>
