@@ -84,7 +84,10 @@ async def get_icons():
     if root_svgs:
         folders["Root"] = root_svgs
     
-    return {"folders": folders}
+    # Sort folders by icon count (descending), then alphabetically for same count
+    sorted_folders = dict(sorted(folders.items(), key=lambda x: (-len(x[1]), x[0])))
+    
+    return {"folders": sorted_folders}
 
 @app.get("/icons/{folder_name}")
 async def get_icons_from_folder(folder_name: str):
@@ -98,6 +101,9 @@ async def get_icons_from_folder(folder_name: str):
             return {"error": "Folder not found"}
         
         icons = [f.stem for f in folder_path.glob("*.svg")]
+    
+    # Sort icons alphabetically
+    icons.sort()
     
     return {"icons": icons}
 
