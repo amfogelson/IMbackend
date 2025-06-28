@@ -34,7 +34,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=ICON_DIR), name="static")
 app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")
-app.mount("/icons", StaticFiles(directory=ICON_DIR), name="icons")
+app.mount("/static-icons", StaticFiles(directory=ICON_DIR), name="static-icons")
 
 # --- Pydantic Model ---
 class UpdateColorRequest(BaseModel):
@@ -42,10 +42,12 @@ class UpdateColorRequest(BaseModel):
     group_id: str
     color: str
     type: str = "icon"  # "icon" or "flag"
+    folder: str = "Root"  # folder name for icons
 
 class ExportPngRequest(BaseModel):
     icon_name: str
     type: str = "icon"  # "icon" or "flag"
+    folder: str = "Root"  # folder name for icons
 
 # --- Utility functions ---
 def update_element_color(element, new_color):
@@ -65,7 +67,38 @@ async def root():
 
 @app.get("/icons")
 async def get_icons():
-    icons = [f.stem for f in ICON_DIR.glob("*.svg")]  # Use .stem to get filename without extension
+    # Get all folders and files in the ICON_DIR
+    folders = {}
+    
+    # Get folders
+    for folder_path in ICON_DIR.iterdir():
+        if folder_path.is_dir():
+            folder_name = folder_path.name
+            # Get all SVG files in this folder
+            svg_files = [f.stem for f in folder_path.glob("*.svg")]
+            if svg_files:  # Only include folders that have SVG files
+                folders[folder_name] = svg_files
+    
+    # Get SVG files in the root directory (not in folders)
+    root_svgs = [f.stem for f in ICON_DIR.glob("*.svg")]
+    if root_svgs:
+        folders["Root"] = root_svgs
+    
+    return {"folders": folders}
+
+@app.get("/icons/{folder_name}")
+async def get_icons_from_folder(folder_name: str):
+    if folder_name == "Root":
+        # Get icons from root directory
+        icons = [f.stem for f in ICON_DIR.glob("*.svg")]
+    else:
+        # Get icons from specific folder
+        folder_path = ICON_DIR / folder_name
+        if not folder_path.exists() or not folder_path.is_dir():
+            return {"error": "Folder not found"}
+        
+        icons = [f.stem for f in folder_path.glob("*.svg")]
+    
     return {"icons": icons}
 
 @app.get("/flags")
@@ -79,7 +112,10 @@ async def export_png(req: ExportPngRequest):
         return {"error": "PNG export not available. cairosvg is not installed."}
     
     if req.type == "icon":
-        filepath = ICON_DIR / req.icon_name
+        if req.folder == "Root":
+            filepath = ICON_DIR / req.icon_name
+        else:
+            filepath = ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     else:
@@ -107,10 +143,13 @@ async def export_png(req: ExportPngRequest):
     except Exception as e:
         return {"error": f"Failed to convert to PNG: {str(e)}"}
 
-@app.get("/groups/{type}/{icon_name}")
-async def get_groups(type: str, icon_name: str):
+@app.get("/groups/{type}/{folder_name}/{icon_name}")
+async def get_groups(type: str, folder_name: str, icon_name: str):
     if type == "icon":
-        filepath = ICON_DIR / icon_name
+        if folder_name == "Root":
+            filepath = ICON_DIR / icon_name
+        else:
+            filepath = ICON_DIR / folder_name / icon_name
     elif type == "flag":
         filepath = FLAG_DIR / icon_name
     else:
@@ -145,7 +184,10 @@ async def get_groups(type: str, icon_name: str):
 @app.post("/update_color")
 async def update_color(req: UpdateColorRequest):
     if req.type == "icon":
-        filepath = ICON_DIR / req.icon_name
+        if req.folder == "Root":
+            filepath = ICON_DIR / req.icon_name
+        else:
+            filepath = ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     else:
