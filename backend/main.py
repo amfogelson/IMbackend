@@ -19,8 +19,10 @@ except ImportError:
 # --- Setup Directories ---
 BASE_DIR = Path(__file__).parent.parent
 ICON_DIR = BASE_DIR / "exported_svgs"
+COLORFUL_ICON_DIR = BASE_DIR / "colorful_icons"  # New directory for colorful icons
 FLAG_DIR = BASE_DIR / "flags"  # New directory for flags
 ICON_DIR.mkdir(exist_ok=True)
+COLORFUL_ICON_DIR.mkdir(exist_ok=True)
 FLAG_DIR.mkdir(exist_ok=True)
 
 app = FastAPI()
@@ -33,6 +35,7 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=ICON_DIR), name="static")
+app.mount("/colorful-icons", StaticFiles(directory=COLORFUL_ICON_DIR), name="colorful-icons")
 app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")
 app.mount("/static-icons", StaticFiles(directory=ICON_DIR), name="static-icons")
 
@@ -49,6 +52,14 @@ class ExportPngRequest(BaseModel):
     type: str = "icon"  # "icon" or "flag"
     folder: str = "Root"  # folder name for icons
 
+class GreyscaleRequest(BaseModel):
+    icon_name: str
+    folder: str = "Root"  # folder name for colorful icons
+
+class RevertRequest(BaseModel):
+    icon_name: str
+    folder: str = "Root"  # folder name for colorful icons
+
 # --- Utility functions ---
 def update_element_color(element, new_color):
     # Case 1: direct 'fill' attribute
@@ -60,6 +71,35 @@ def update_element_color(element, new_color):
         style = element.attrib['style']
         style = re.sub(r'fill\s*:\s*#[0-9a-fA-F]{3,6}', f'fill:{new_color}', style)
         element.set('style', style)
+
+def convert_to_greyscale(element):
+    """Convert an SVG element to greyscale by applying a filter"""
+    # Add a greyscale filter to the element
+    element.set('filter', 'url(#greyscale)')
+    
+    # If the element has a style attribute, add the filter there too
+    if 'style' in element.attrib:
+        style = element.attrib['style']
+        if 'filter:' not in style:
+            style += ';filter:url(#greyscale)'
+            element.set('style', style)
+
+def create_backup(filepath):
+    """Create a backup of the original SVG file"""
+    backup_path = filepath.with_suffix('.svg.backup')
+    if not backup_path.exists():
+        import shutil
+        shutil.copy2(filepath, backup_path)
+    return backup_path
+
+def restore_from_backup(filepath):
+    """Restore the original SVG from backup"""
+    backup_path = filepath.with_suffix('.svg.backup')
+    if backup_path.exists():
+        import shutil
+        shutil.copy2(backup_path, filepath)
+        return True
+    return False
 
 @app.get("/")
 async def root():
@@ -233,6 +273,96 @@ async def update_color(req: UpdateColorRequest):
 
     tree.write(filepath, encoding='utf-8', xml_declaration=True)
     return {"status": "Color updated"}
+
+@app.get("/colorful-icons")
+async def get_colorful_icons():
+    # Get all folders and files in the COLORFUL_ICON_DIR
+    folders = {}
+    
+    # Get folders
+    for folder_path in COLORFUL_ICON_DIR.iterdir():
+        if folder_path.is_dir():
+            folder_name = folder_path.name
+            # Get all SVG files in this folder
+            svg_files = [f.stem for f in folder_path.glob("*.svg")]
+            if svg_files:  # Only include folders that have SVG files
+                folders[folder_name] = svg_files
+    
+    # Get SVG files in the root directory (not in folders)
+    root_svgs = [f.stem for f in COLORFUL_ICON_DIR.glob("*.svg")]
+    if root_svgs:
+        folders["Root"] = root_svgs
+    
+    # Sort folders by icon count (descending), then alphabetically for same count
+    sorted_folders = dict(sorted(folders.items(), key=lambda x: (-len(x[1]), x[0])))
+    
+    return {"folders": sorted_folders}
+
+@app.post("/greyscale")
+async def convert_to_greyscale_endpoint(req: GreyscaleRequest):
+    if req.folder == "Root":
+        filepath = COLORFUL_ICON_DIR / f"{req.icon_name}.svg"
+    else:
+        filepath = COLORFUL_ICON_DIR / req.folder / f"{req.icon_name}.svg"
+    
+    if not filepath.exists():
+        return {"error": "File not found"}
+
+    try:
+        # Create backup of original file before converting
+        create_backup(filepath)
+        
+        ET.register_namespace('', "http://www.w3.org/2000/svg")
+        tree = ET.parse(filepath)
+        root = tree.getroot()
+        
+        # Add greyscale filter definition if it doesn't exist
+        defs = root.find(".//{http://www.w3.org/2000/svg}defs")
+        if defs is None:
+            defs = ET.SubElement(root, "defs")
+        
+        # Check if greyscale filter already exists
+        existing_filter = defs.find(".//{http://www.w3.org/2000/svg}filter[@id='greyscale']")
+        if existing_filter is None:
+            # Create greyscale filter
+            filter_elem = ET.SubElement(defs, "filter", id="greyscale")
+            fe_color_matrix = ET.SubElement(filter_elem, "feColorMatrix", 
+                                          type="matrix", 
+                                          values="0.299 0.587 0.114 0 0 0.299 0.587 0.114 0 0 0.299 0.587 0.114 0 0 0 0 0 1 0")
+        
+        # Apply greyscale filter to all path and rect elements
+        for element in root.findall(".//{http://www.w3.org/2000/svg}path") + root.findall(".//{http://www.w3.org/2000/svg}rect"):
+            convert_to_greyscale(element)
+        
+        # Apply greyscale filter to all other elements that can have colors
+        for element in root.findall(".//{http://www.w3.org/2000/svg}circle") + root.findall(".//{http://www.w3.org/2000/svg}ellipse") + root.findall(".//{http://www.w3.org/2000/svg}polygon") + root.findall(".//{http://www.w3.org/2000/svg}polyline") + root.findall(".//{http://www.w3.org/2000/svg}line"):
+            convert_to_greyscale(element)
+        
+        # Save the modified SVG
+        tree.write(filepath, encoding='utf-8', xml_declaration=True)
+        
+        return {"status": "Converted to greyscale"}
+    except Exception as e:
+        return {"error": f"Failed to convert to greyscale: {str(e)}"}
+
+@app.post("/revert")
+async def revert_to_color_endpoint(req: RevertRequest):
+    if req.folder == "Root":
+        filepath = COLORFUL_ICON_DIR / f"{req.icon_name}.svg"
+    else:
+        filepath = COLORFUL_ICON_DIR / req.folder / f"{req.icon_name}.svg"
+    
+    if not filepath.exists():
+        return {"error": "File not found"}
+
+    try:
+        # Restore from backup
+        if restore_from_backup(filepath):
+            return {"status": "Reverted to original colors"}
+        else:
+            return {"error": "No backup found to revert from"}
+    except Exception as e:
+        return {"error": f"Failed to revert to original colors: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
