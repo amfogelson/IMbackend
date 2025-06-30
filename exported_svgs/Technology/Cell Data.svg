@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.766 116.083">
-  <g id="Color">
-    <polygon points="33.974 41.141 5.06 6.128 0 0 7.941 0 74.981 0 82.923 0 77.862 6.128 48.95 41.141 48.95 116.083 44.896 116.083 37.408 116.083 33.974 116.083 33.974 41.141" fill="#64b5f6" />
-  </g>
-  <g id="Grey">
-    <rect x="63.632" y="82.366" width="14.977" height="33.717" fill="#282828" />
-    <rect x="97.351" y="56.143" width="14.976" height="59.94" fill="#282828" />
-    <rect x="131.07" y="29.902" width="14.976" height="86.181" fill="#282828" />
-    <rect x="164.789" y="3.695" width="14.977" height="112.388" fill="#282828" />
-  </g>
-</svg>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.766 116.083">
+  <ns0:g id="Color" fill="#00ABF6">
+    <ns0:polygon points="33.974 41.141 5.06 6.128 0 0 7.941 0 74.981 0 82.923 0 77.862 6.128 48.95 41.141 48.95 116.083 44.896 116.083 37.408 116.083 33.974 116.083 33.974 41.141" />
+  </ns0:g>
+  <ns0:g id="Grey" fill="#282828">
+    <ns0:rect x="63.632" y="82.366" width="14.977" height="33.717" />
+    <ns0:rect x="97.351" y="56.143" width="14.976" height="59.94" />
+    <ns0:rect x="131.07" y="29.902" width="14.976" height="86.181" />
+    <ns0:rect x="164.789" y="3.695" width="14.977" height="112.388" />
+  </ns0:g>
+</ns0:svg>
