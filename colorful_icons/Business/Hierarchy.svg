@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <g id="Icon">
+    <g>
+      <path d="M42.111,29.906v5.01h-2v-4.01h-15.11v4.01h-2v-4.01H7.891v4.01h-2v-5.01c0-.55.45-1,1-1h16.11v-3.4h2v3.4h16.11c.55,0,1,.45,1,1Z" fill="#415a6b"/>
+      <circle cx="24" cy="13.143" r="13.143" transform="translate(-2.264 20.82) rotate(-45)" fill="#ffd15c"/>
+      <circle cx="24" cy="13.143" r="9.079" transform="translate(-2.264 20.82) rotate(-45)" fill="#f7b64c"/>
+      <rect y="34.215" width="13.786" height="13.785" rx="2" ry="2" fill="#66c6b9"/>
+      <rect x="2.571" y="36.786" width="8.644" height="8.643" transform="translate(48 34.215) rotate(90)" fill="#4ec0aa"/>
+      <rect x="17.107" y="34.215" width="13.785" height="13.785" rx="2" ry="2" fill="#f3705a"/>
+      <rect x="19.678" y="36.786" width="8.644" height="8.643" transform="translate(65.107 17.107) rotate(90)" fill="#f05540"/>
+      <rect x="34.214" y="34.215" width="13.785" height="13.785" rx="2" ry="2" fill="#66c6b9"/>
+      <rect x="36.785" y="36.786" width="8.644" height="8.643" transform="translate(82.214 0) rotate(90)" fill="#4ec0aa"/>
+    </g>
+  </g>
+</svg>

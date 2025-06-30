@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 48">
+  <g id="Icon">
+    <g>
+      <rect width="42" height="48" rx="3" ry="3" fill="#f3f3f3"/>
+      <rect x="4" y="4" width="34" height="12.538" fill="#415a6b"/>
+      <g>
+        <rect x="4" y="20.538" width="8.666" height="9.731" fill="#ffd15c"/>
+        <rect x="16.667" y="20.538" width="8.667" height="9.731" fill="#66c6b9"/>
+        <rect x="29.336" y="20.536" width="8.66" height="23.46" fill="#f3705a"/>
+        <rect x="4" y="34.269" width="8.666" height="9.731" fill="#ced6e0"/>
+        <rect x="16.667" y="34.269" width="8.667" height="9.731" fill="#ced6e0"/>
+      </g>
+    </g>
+  </g>
+</svg>

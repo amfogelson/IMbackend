@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47.998 48">
+  <g id="Icon">
+    <g>
+      <rect width="31.959" height="48" rx="3" ry="3" fill="#e8eae9"/>
+      <rect y="5.059" width="31.959" height="32.783" fill="#415a6b"/>
+      <circle cx="15.979" cy="42.921" r="2.825" fill="#adb3ba"/>
+      <path d="M47.998,5.936v16.01c0,1.65-1.34,3-3,3h-10.8l-10.2,6.15v-6.15h-1.45c-1.65,0-3-1.35-3-3V5.936c0-1.66,1.35-3,3-3h22.45c1.66,0,3,1.34,3,3Z" fill="#55c0eb"/>
+    </g>
+  </g>
+</svg>

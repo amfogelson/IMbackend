@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45.269 48">
+  <g id="Icon">
+    <g>
+      <g>
+        <rect width="21.301" height="48" rx="3" ry="3" fill="#8ad7f8"/>
+        <rect x="4" y="4" width="13.301" height="17.057" fill="#fff"/>
+        <g>
+          <rect x="6.112" y="7.114" width="9.078" height="1.353" fill="#e8eae9"/>
+          <rect x="6.112" y="10.963" width="9.078" height="1.353" fill="#e8eae9"/>
+          <rect x="6.112" y="14.813" width="9.078" height="1.353" fill="#e8eae9"/>
+        </g>
+        <circle cx="10.65" cy="36.932" r="4.745" fill="#fff"/>
+      </g>
+      <g>
+        <rect x="23.968" width="21.301" height="48" rx="3" ry="3" fill="#f3705a"/>
+        <rect x="27.968" y="4" width="13.301" height="17.057" fill="#fff"/>
+        <g>
+          <rect x="30.08" y="7.114" width="9.078" height="1.353" fill="#e8eae9"/>
+          <rect x="30.08" y="10.963" width="9.078" height="1.353" fill="#e8eae9"/>
+          <rect x="30.08" y="14.813" width="9.078" height="1.353" fill="#e8eae9"/>
+        </g>
+        <circle cx="34.619" cy="36.932" r="4.745" fill="#fff"/>
+      </g>
+    </g>
+  </g>
+</svg>
