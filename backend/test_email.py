@@ -20,10 +20,10 @@ def test_email_configuration():
     email_enabled = os.getenv('ENABLE_EMAIL_NOTIFICATIONS', 'false').lower() == 'true'
     smtp_server = os.getenv('EMAIL_SMTP_SERVER', 'smtp.gmail.com')
     smtp_port = int(os.getenv('EMAIL_SMTP_PORT', '587'))
-    username = os.getenv('EMAIL_USERNAME', '')
-    password = os.getenv('EMAIL_PASSWORD', '')
-    email_from = os.getenv('EMAIL_FROM', '')
-    email_to = os.getenv('EMAIL_TO', '')
+    username = os.getenv('EMAIL_USERNAME', 'amfogelson@gmail.com')
+    password = os.getenv('EMAIL_PASSWORD', 'jhzu jiar pswo yqqt')
+    email_from = os.getenv('EMAIL_FROM', 'amfogelson@gmail.com')
+    email_to = os.getenv('EMAIL_TO', 'amfogelson@gmail.com')
     
     print("Email Configuration Test")
     print("=" * 40)
