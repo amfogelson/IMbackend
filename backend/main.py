@@ -8,6 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 import io
 
+print("DEBUG: Backend main.py loaded with updated code!")
+
 # Try to import cairosvg, but make it optional
 try:
     import cairosvg
@@ -62,15 +64,31 @@ class RevertRequest(BaseModel):
 
 # --- Utility functions ---
 def update_element_color(element, new_color):
+    """Update the color of an SVG element"""
+    print(f"DEBUG: update_element_color called on {element.tag} with color {new_color}")
+    
     # Case 1: direct 'fill' attribute
     if 'fill' in element.attrib:
+        old_fill = element.get('fill')
         element.set('fill', new_color)
+        print(f"DEBUG: Updated fill attribute: {old_fill} -> {new_color}")
 
     # Case 2: inline 'style' attribute (style="fill:#xxxxxx;stroke:none")
     if 'style' in element.attrib:
         style = element.attrib['style']
+        old_style = style
+        # Replace fill color in style attribute
         style = re.sub(r'fill\s*:\s*#[0-9a-fA-F]{3,6}', f'fill:{new_color}', style)
+        # If no fill color was found, add it
+        if 'fill:' not in style:
+            style += f';fill:{new_color}'
         element.set('style', style)
+        print(f"DEBUG: Updated style attribute: {old_style} -> {style}")
+
+    # Case 3: If no fill attribute or style, add fill attribute
+    if 'fill' not in element.attrib and 'style' not in element.attrib:
+        element.set('fill', new_color)
+        print(f"DEBUG: Added fill attribute: {new_color}")
 
 def convert_to_greyscale(element):
     """Convert an SVG element to greyscale by applying a filter"""
@@ -104,6 +122,10 @@ def restore_from_backup(filepath):
 @app.get("/")
 async def root():
     return {"message": "Icon Manager Backend is running!", "cairo_available": CAIRO_AVAILABLE}
+
+@app.get("/test")
+async def test():
+    return {"message": "Test endpoint working!", "debug": "Backend is responding"}
 
 @app.get("/icons")
 async def get_icons():
@@ -229,50 +251,88 @@ async def get_groups(type: str, folder_name: str, icon_name: str):
 
 @app.post("/update_color")
 async def update_color(req: UpdateColorRequest):
-    if req.type == "icon":
-        if req.folder == "Root":
-            filepath = ICON_DIR / req.icon_name
+    try:
+        print(f"DEBUG: update_color called with {req}", flush=True)
+        print("DEBUG: Starting function execution...", flush=True)
+        
+        if req.type == "icon" or req.type == "icons":
+            print("DEBUG: Type is icon", flush=True)
+            if req.folder == "Root":
+                filepath = ICON_DIR / req.icon_name
+            else:
+                filepath = ICON_DIR / req.folder / req.icon_name
+        elif req.type == "flag":
+            print("DEBUG: Type is flag", flush=True)
+            filepath = FLAG_DIR / req.icon_name
         else:
-            filepath = ICON_DIR / req.folder / req.icon_name
-    elif req.type == "flag":
-        filepath = FLAG_DIR / req.icon_name
-    else:
-        return {"error": "Invalid type"}
-    
-    if not filepath.exists():
-        return {"error": "File not found"}
+            print("DEBUG: Invalid type", flush=True)
+            return {"error": "Invalid type"}
+        
+        print(f"DEBUG: Filepath: {filepath}", flush=True)
+        
+        if not filepath.exists():
+            print(f"DEBUG: File not found: {filepath}", flush=True)
+            return {"error": "File not found"}
 
-    ET.register_namespace('', "http://www.w3.org/2000/svg")
-    tree = ET.parse(filepath)
-    root = tree.getroot()
-    namespaces = {"svg": "http://www.w3.org/2000/svg"}
-    
-    if req.group_id == "entire_flag":
-        # For flags, update all elements in the SVG
-        for element in root.iter():
-            update_element_color(element, req.color)
-    else:
-        # For icons, update specific group
-        groups = []
-        for g in root.findall(".//svg:g", namespaces):
-            group_id = g.get("id")
-            if group_id:
-                groups.append(group_id)
+        print(f"DEBUG: File exists, parsing SVG...", flush=True)
+        ET.register_namespace('', "http://www.w3.org/2000/svg")
+        tree = ET.parse(filepath)
+        root = tree.getroot()
+        namespaces = {"svg": "http://www.w3.org/2000/svg"}
+        
+        if req.group_id == "entire_flag":
+            # For flags, update all elements in the SVG
+            print(f"DEBUG: Updating entire flag with color {req.color}", flush=True)
+            for element in root.iter():
+                update_element_color(element, req.color)
+        else:
+            # For icons, update specific group
+            print(f"DEBUG: Looking for group '{req.group_id}' in icon", flush=True)
+            groups = []
+            for g in root.findall(".//svg:g", namespaces):
+                group_id = g.get("id")
+                if group_id:
+                    groups.append(group_id)
 
-        target_group = root.find(f".//svg:g[@id='{req.group_id}']", namespaces)
-        if target_group is None:
-            return {"error": "Group not found"}
+            print(f"DEBUG: Found groups: {groups}", flush=True)
 
-        # Update all descendants inside the group
-        for element in target_group.iter():
-            update_element_color(element, req.color)
+            target_group = root.find(f".//svg:g[@id='{req.group_id}']", namespaces)
+            if target_group is None:
+                print(f"DEBUG: Group '{req.group_id}' not found!", flush=True)
+                return {"error": "Group not found"}
 
-    # Only remove <style> blocks directly under root
-    for style_block in list(root.findall("svg:style", namespaces)):
-        root.remove(style_block)
+            print(f"DEBUG: Found target group '{req.group_id}', updating with color {req.color}", flush=True)
+            
+            # Update all descendants inside the group
+            updated_count = 0
+            for element in target_group.iter():
+                if element.tag.endswith(('path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line')):
+                    old_fill = element.get('fill', 'N/A')
+                    old_style = element.get('style', 'N/A')
+                    update_element_color(element, req.color)
+                    new_fill = element.get('fill', 'N/A')
+                    new_style = element.get('style', 'N/A')
+                    if old_fill != new_fill or old_style != new_style:
+                        updated_count += 1
+                        print(f"DEBUG: Updated element {element.tag} - fill: {old_fill} -> {new_fill}, style: {old_style} -> {new_style}", flush=True)
+            
+            print(f"DEBUG: Updated {updated_count} elements in group '{req.group_id}'", flush=True)
 
-    tree.write(filepath, encoding='utf-8', xml_declaration=True)
-    return {"status": "Color updated"}
+        # Only remove <style> blocks directly under root
+        for style_block in list(root.findall("svg:style", namespaces)):
+            root.remove(style_block)
+
+        # Write the file back
+        print(f"DEBUG: Writing file back to {filepath}", flush=True)
+        tree.write(filepath, encoding='utf-8', xml_declaration=True)
+        print(f"DEBUG: File written successfully", flush=True)
+        
+        return {"status": "Color updated"}
+    except Exception as e:
+        print(f"DEBUG: Exception in update_color: {e}", flush=True)
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}", flush=True)
+        return {"error": f"Internal server error: {str(e)}"}
 
 @app.get("/colorful-icons")
 async def get_colorful_icons():
@@ -363,6 +423,32 @@ async def revert_to_color_endpoint(req: RevertRequest):
             return {"error": "No backup found to revert from"}
     except Exception as e:
         return {"error": f"Failed to revert to original colors: {str(e)}"}
+
+@app.get("/check-greyscale/{folder_name}/{icon_name}")
+async def check_greyscale(folder_name: str, icon_name: str):
+    if folder_name == "Root":
+        filepath = COLORFUL_ICON_DIR / f"{icon_name}.svg"
+    else:
+        filepath = COLORFUL_ICON_DIR / folder_name / f"{icon_name}.svg"
+    
+    if not filepath.exists():
+        return {"error": "File not found"}
+
+    try:
+        ET.register_namespace('', "http://www.w3.org/2000/svg")
+        tree = ET.parse(filepath)
+        root = tree.getroot()
+        
+        # Check if greyscale filter exists in the SVG
+        defs = root.find(".//{http://www.w3.org/2000/svg}defs")
+        if defs is not None:
+            greyscale_filter = defs.find(".//{http://www.w3.org/2000/svg}filter[@id='greyscale']")
+            if greyscale_filter is not None:
+                return {"is_greyscale": True}
+        
+        return {"is_greyscale": False}
+    except Exception as e:
+        return {"error": f"Failed to check greyscale status: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
