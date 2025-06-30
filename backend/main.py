@@ -7,8 +7,73 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 import io
+import json
+from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 print("DEBUG: Backend main.py loaded with updated code!")
+
+# --- Email Configuration ---
+EMAIL_ENABLED = os.getenv('ENABLE_EMAIL_NOTIFICATIONS', 'false').lower() == 'true'
+EMAIL_SMTP_SERVER = os.getenv('EMAIL_SMTP_SERVER', 'smtp.gmail.com')
+EMAIL_SMTP_PORT = int(os.getenv('EMAIL_SMTP_PORT', '587'))
+EMAIL_USERNAME = os.getenv('EMAIL_USERNAME', '')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
+EMAIL_FROM = os.getenv('EMAIL_FROM', '')
+EMAIL_TO = os.getenv('EMAIL_TO', '')
+
+def send_feedback_notification(feedback_type, feedback_message, feedback_id):
+    """Send email notification for new feedback submission"""
+    if not EMAIL_ENABLED or not all([EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_FROM, EMAIL_TO]):
+        print("Email notifications disabled or configuration incomplete")
+        return False
+    
+    try:
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_FROM
+        msg['To'] = EMAIL_TO
+        msg['Subject'] = f"New Feedback Submission - {feedback_type} (ID: {feedback_id})"
+        
+        # Create email body
+        body = f"""
+New feedback has been submitted to the Icon Manager application.
+
+Feedback Details:
+- ID: {feedback_id}
+- Type: {feedback_type}
+- Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- Message: {feedback_message}
+
+You can view and manage this feedback through the admin interface.
+
+Best regards,
+Icon Manager System
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        server = smtplib.SMTP(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(EMAIL_FROM, EMAIL_TO, text)
+        server.quit()
+        
+        print(f"Email notification sent for feedback ID {feedback_id}")
+        return True
+        
+    except Exception as e:
+        print(f"Error sending email notification: {e}")
+        return False
 
 # Try to import cairosvg, but make it optional
 try:
@@ -61,6 +126,88 @@ class GreyscaleRequest(BaseModel):
 class RevertRequest(BaseModel):
     icon_name: str
     folder: str = "Root"  # folder name for colorful icons
+
+class FeedbackRequest(BaseModel):
+    type: str
+    message: str
+
+# --- Feedback Storage ---
+FEEDBACK_DIR = BASE_DIR / "feedback_submissions"
+FEEDBACK_DIR.mkdir(exist_ok=True)
+
+def load_feedback():
+    """Load feedback from individual files"""
+    feedback_list = []
+    
+    if FEEDBACK_DIR.exists():
+        for file_path in FEEDBACK_DIR.glob("*.txt"):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    if len(lines) >= 4:
+                        feedback = {
+                            "id": int(file_path.stem),  # filename without extension
+                            "timestamp": lines[0].strip(),
+                            "type": lines[1].strip(),
+                            "status": lines[2].strip(),
+                            "message": "".join(lines[3:]).strip()  # rest of the file
+                        }
+                        feedback_list.append(feedback)
+            except Exception as e:
+                print(f"Error reading feedback file {file_path}: {e}")
+    
+    return feedback_list
+
+def save_feedback(feedback_type, feedback_message):
+    """Save a new feedback submission as a file"""
+    try:
+        # Get the next available ID
+        existing_files = list(FEEDBACK_DIR.glob("*.txt"))
+        next_id = 1
+        if existing_files:
+            existing_ids = [int(f.stem) for f in existing_files if f.stem.isdigit()]
+            if existing_ids:
+                next_id = max(existing_ids) + 1
+        
+        # Create the feedback file
+        file_path = FEEDBACK_DIR / f"{next_id}.txt"
+        timestamp = datetime.now().isoformat()
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(f"{timestamp}\n")
+            f.write(f"{feedback_type}\n")
+            f.write("new\n")  # default status
+            f.write(f"{feedback_message}\n")
+        
+        return next_id
+    except Exception as e:
+        print(f"Error saving feedback: {e}")
+        return None
+
+def update_feedback_status_file(feedback_id, new_status):
+    """Update the status of a feedback submission"""
+    try:
+        file_path = FEEDBACK_DIR / f"{feedback_id}.txt"
+        if not file_path.exists():
+            return False
+        
+        # Read the current file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        if len(lines) >= 3:
+            # Update the status line (3rd line)
+            lines[2] = f"{new_status}\n"
+            
+            # Write back to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.writelines(lines)
+            
+            return True
+        return False
+    except Exception as e:
+        print(f"Error updating feedback status: {e}")
+        return False
 
 # --- Utility functions ---
 def update_element_color(element, new_color):
@@ -449,6 +596,43 @@ async def check_greyscale(folder_name: str, icon_name: str):
         return {"is_greyscale": False}
     except Exception as e:
         return {"error": f"Failed to check greyscale status: {str(e)}"}
+
+@app.post("/feedback")
+async def submit_feedback(req: FeedbackRequest):
+    """Submit feedback from users"""
+    try:
+        feedback_id = save_feedback(req.type, req.message)
+        
+        if feedback_id:
+            # Send email notification
+            send_feedback_notification(req.type, req.message, feedback_id)
+            return {"status": "Feedback submitted successfully", "id": feedback_id}
+        else:
+            return {"error": "Failed to save feedback"}
+    except Exception as e:
+        return {"error": f"Failed to submit feedback: {str(e)}"}
+
+@app.get("/feedback")
+async def get_feedback():
+    """Get all feedback (for creator/admin to view)"""
+    try:
+        feedback_list = load_feedback()
+        # Sort by timestamp (newest first)
+        feedback_list.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return {"feedback": feedback_list}
+    except Exception as e:
+        return {"error": f"Failed to load feedback: {str(e)}"}
+
+@app.put("/feedback/{feedback_id}/status")
+async def update_feedback_status(feedback_id: int, status: str):
+    """Update feedback status (e.g., 'read', 'in_progress', 'resolved')"""
+    try:
+        if update_feedback_status_file(feedback_id, status):
+            return {"status": "Feedback status updated successfully"}
+        else:
+            return {"error": "Feedback not found"}
+    except Exception as e:
+        return {"error": f"Failed to update feedback status: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
