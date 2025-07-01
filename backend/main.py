@@ -13,6 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import zipfile
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -126,6 +127,12 @@ class GreyscaleRequest(BaseModel):
 class RevertRequest(BaseModel):
     icon_name: str
     folder: str = "Root"  # folder name for colorful icons
+
+class ZipExportRequest(BaseModel):
+    items: list[str]  # List of icon names
+    type: str = "icon"  # "icon", "colorful-icon", or "flag"
+    folder: str = "Root"  # folder name for icons
+    format: str = "svg"  # "svg" or "png"
 
 class FeedbackRequest(BaseModel):
     type: str
@@ -358,6 +365,68 @@ async def export_png(req: ExportPngRequest):
     except Exception as e:
         return {"error": f"Failed to convert to PNG: {str(e)}"}
 
+@app.post("/export-zip")
+async def export_zip(req: ZipExportRequest):
+    """Export multiple icons as a ZIP file"""
+    try:
+        # Create a ZIP file in memory
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for item_name in req.items:
+                try:
+                    # Determine the source file path
+                    if req.type == "icon":
+                        if req.folder == "Root":
+                            source_path = ICON_DIR / f"{item_name}.svg"
+                        else:
+                            source_path = ICON_DIR / req.folder / f"{item_name}.svg"
+                    elif req.type == "colorful-icon":
+                        if req.folder == "Root":
+                            source_path = COLORFUL_ICON_DIR / f"{item_name}.svg"
+                        else:
+                            source_path = COLORFUL_ICON_DIR / req.folder / f"{item_name}.svg"
+                    else:  # flag
+                        source_path = FLAG_DIR / f"{item_name}.svg"
+                    
+                    if not source_path.exists():
+                        continue
+                    
+                    # Determine the filename in the ZIP
+                    if req.format == "png":
+                        # Convert SVG to PNG
+                        if CAIRO_AVAILABLE:
+                            png_data = cairosvg.svg2png(bytestring=source_path.read_text(encoding='utf-8').encode('utf-8'))
+                            zip_file.writestr(f"{item_name}.png", png_data)
+                        else:
+                            # Fallback to SVG if PNG conversion not available
+                            with open(source_path, 'rb') as f:
+                                zip_file.writestr(f"{item_name}.svg", f.read())
+                    else:
+                        # Export as SVG
+                        with open(source_path, 'rb') as f:
+                            zip_file.writestr(f"{item_name}.svg", f.read())
+                            
+                except Exception as e:
+                    print(f"Error processing {item_name}: {e}")
+                    continue
+        
+        # Prepare the response
+        zip_buffer.seek(0)
+        
+        # Create a meaningful filename
+        folder_name = req.folder if req.folder != "Root" else "icons"
+        zip_filename = f"{folder_name}_{req.type}_{req.format}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        
+        return StreamingResponse(
+            io.BytesIO(zip_buffer.getvalue()),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={zip_filename}"}
+        )
+        
+    except Exception as e:
+        return {"error": f"Failed to create ZIP: {str(e)}"}
+
 @app.get("/groups/{type}/{folder_name}/{icon_name}")
 async def get_groups(type: str, folder_name: str, icon_name: str):
     if type == "icon":
@@ -395,6 +464,48 @@ async def get_groups(type: str, folder_name: str, icon_name: str):
                 groups.append(group_id)
     
     return {"groups": groups}
+
+@app.get("/svg/{type}/{folder_name}/{icon_name}")
+async def get_svg_with_cors(type: str, folder_name: str, icon_name: str):
+    """Serve SVG files with proper CORS headers for frontend fetch requests"""
+    try:
+        if type == "icon":
+            # Construct the file path
+            if folder_name == "Root":
+                file_path = ICON_DIR / icon_name
+            else:
+                file_path = ICON_DIR / folder_name / icon_name
+        elif type == "colorful-icon":
+            # For colorful icons
+            if folder_name == "Root":
+                file_path = COLORFUL_ICON_DIR / icon_name
+            else:
+                file_path = COLORFUL_ICON_DIR / folder_name / icon_name
+        else:
+            # For flags
+            file_path = FLAG_DIR / icon_name
+        
+        if not file_path.exists():
+            return {"error": "File not found"}
+        
+        # Read the SVG content
+        with open(file_path, 'r', encoding='utf-8') as f:
+            svg_content = f.read()
+        
+        # Return with proper headers
+        from fastapi.responses import Response
+        return Response(
+            content=svg_content,
+            media_type="image/svg+xml",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "*"
+            }
+        )
+    except Exception as e:
+        print(f"Error serving SVG: {e}")
+        return {"error": "Failed to serve SVG"}
 
 @app.post("/update_color")
 async def update_color(req: UpdateColorRequest):
