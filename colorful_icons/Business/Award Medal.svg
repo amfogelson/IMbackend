@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <g id="Icon">
+    <g>
+      <polygon points="48 0 28.698 0 20.495 15.391 27.505 15.391 48 0" fill="#f05540"/>
+      <path d="M29.835,20.172h-11.67v-4.451c0-1.285,1.045-2.33,2.33-2.33h7.01c1.285,0,2.33,1.045,2.33,2.33v4.451ZM20.165,18.172h7.67v-2.451c0-.182-.148-.33-.33-.33h-7.01c-.182,0-.33.149-.33.33v2.451Z" fill="#ffd15c"/>
+      <g>
+        <circle cx="24" cy="32.282" r="15.718" transform="translate(-6.734 6.329) rotate(-13.192)" fill="#ffd15c"/>
+        <circle cx="24" cy="32.282" r="11.643" transform="translate(-4.845 4.244) rotate(-9.184)" fill="#f7b64c"/>
+        <path d="M20.648,25.847h5.209v12.869h-2.761v-10.421h-2.448v-2.448Z" fill="#ffd15c"/>
+      </g>
+      <polygon points="20.495 15.391 27.505 15.391 19.303 0 0 0 20.495 15.391" fill="#f3705a"/>
+    </g>
+  </g>
+</svg>

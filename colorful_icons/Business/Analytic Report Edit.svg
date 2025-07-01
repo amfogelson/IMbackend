@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48.001 48">
+  <g id="Icon">
+    <g>
+      <path d="M38.121,0H3C1.343,0,0,1.343,0,3v33.766l11.234,11.234h26.887c1.657,0,3-1.343,3-3V3c0-1.657-1.343-3-3-3Z" fill="#f3f3f3"/>
+      <rect x="4" y="4" width="33.121" height="2.749" fill="#ced6e0"/>
+      <rect x="4" y="10.707" width="33.121" height="2.749" fill="#ced6e0"/>
+      <rect x="4" y="17.414" width="33.121" height="2.749" fill="#ced6e0"/>
+      <rect x="4" y="24.121" width="15.017" height="2.749" fill="#ced6e0"/>
+      <polygon points="0 36.766 11.234 48 11.234 36.766 0 36.766" fill="#ced6e0"/>
+      <g>
+        <rect x="15.336" y="40.006" width="3.647" height="3.994" fill="#f3705a"/>
+        <rect x="21.382" y="33.796" width="3.647" height="10.204" fill="#8ad7f8"/>
+        <rect x="27.428" y="37.558" width="3.647" height="6.442" fill="#415a6b"/>
+        <rect x="33.474" y="31.683" width="3.647" height="12.317" fill="#ffd15c"/>
+      </g>
+      <g>
+        <g>
+          <rect x="31.721" y="3.776" width="2.308" height="19.728" transform="translate(19.274 -19.252) rotate(45.002)" fill="#f05540"/>
+          <rect x="33.353" y="5.407" width="2.308" height="19.728" transform="translate(20.904 -19.927) rotate(44.998)" fill="#f3705a"/>
+          <rect x="34.985" y="7.039" width="2.308" height="19.728" transform="translate(22.537 -20.603) rotate(45)" fill="#f05540"/>
+        </g>
+        <rect x="41.301" y="4.406" width="1.226" height="6.92" transform="translate(6.713 31.94) rotate(-44.997)" fill="#f3f3f3"/>
+        <path d="M44.794,9.879l2.914-2.914c.39-.391.39-1.024,0-1.414l-3.479-3.479c-.391-.39-1.024-.39-1.414,0l-2.914,2.914,4.893,4.893Z" fill="#415a6b"/>
+        <polygon points="29.98 24.693 25.085 19.798 23.567 26.211 29.98 24.693" fill="#ffd15c"/>
+        <path d="M25.808,25.677l-2.239.532.533-2.238c.844.194,1.507.858,1.706,1.706Z" fill="#415a6b"/>
+      </g>
+    </g>
+  </g>
+</svg>
