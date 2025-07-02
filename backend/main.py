@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -15,6 +15,12 @@ from email.mime.multipart import MIMEMultipart
 import os
 import zipfile
 from dotenv import load_dotenv
+from pptx import Presentation
+from pptx.util import Inches
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+import tempfile
+import shutil
+from copy import deepcopy
 
 # Load environment variables
 load_dotenv()
@@ -744,6 +750,47 @@ async def update_feedback_status(feedback_id: int, status: str):
             return {"error": "Feedback not found"}
     except Exception as e:
         return {"error": f"Failed to update feedback status: {str(e)}"}
+
+@app.get("/infographics")
+def list_infographics():
+    infographics_dir = os.path.join(os.path.dirname(__file__), "../infographics")
+    files = [f for f in os.listdir(infographics_dir) if f.lower().endswith('.png')]
+    # Return list of PNGs (filenames)
+    return {"infographics": files}
+
+@app.get("/infographics/{infographic_name}/download")
+def download_infographic_pptx(infographic_name: str):
+    """
+    Given an infographic PNG name, return the original PowerPoint file with all slides.
+    This preserves the original shapes and formatting, even if there are some corruption issues.
+    """
+    base_dir = os.path.dirname(__file__)
+    infographics_dir = os.path.join(base_dir, "../infographics")
+    
+    # Use the original master PowerPoint file
+    master_pptx_path = os.path.join(infographics_dir, "infographics_master.pptx")
+    
+    print(f"[DEBUG] Download request for: {infographic_name}")
+    print(f"[DEBUG] infographics_dir: {infographics_dir}")
+    print(f"[DEBUG] master_pptx_path: {master_pptx_path}")
+
+    # Check if master PPTX exists
+    if not os.path.exists(master_pptx_path):
+        print(f"[ERROR] Master PPTX not found at: {master_pptx_path}")
+        raise HTTPException(status_code=404, detail="Master PPTX not found")
+
+    # Return the original PowerPoint file directly
+    filename = "infographics_master.pptx"
+    print(f"[DEBUG] Returning original PPTX: {master_pptx_path} as {filename}")
+    response = FileResponse(
+        master_pptx_path, 
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
+        filename=filename
+    )
+    return response
+
+# Now mount the static files for infographics (after the download endpoint)
+app.mount("/infographics", StaticFiles(directory=BASE_DIR / "infographics"), name="infographics")
 
 if __name__ == "__main__":
     import uvicorn
