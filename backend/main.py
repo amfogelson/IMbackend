@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Response, HTTPException
+from fastapi import FastAPI, APIRouter, Response, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -110,7 +110,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=ICON_DIR), name="static")
 app.mount("/colorful-icons", StaticFiles(directory=COLORFUL_ICON_DIR), name="colorful-icons")
-app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")
+# app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")  # Commented out to use custom endpoint with CORS
 app.mount("/static-icons", StaticFiles(directory=ICON_DIR), name="static-icons")
 
 # --- Pydantic Model ---
@@ -334,6 +334,23 @@ async def get_flags():
     flags = [f.name for f in FLAG_DIR.glob("*.svg")]
     return {"flags": flags}
 
+@app.get("/flags/{flag_name}")
+async def get_flag(flag_name: str, request: Request):
+    """Serve flag files with proper CORS headers"""
+    file_path = FLAG_DIR / flag_name
+    if not file_path.exists():
+        return Response(status_code=404, content="Flag not found")
+    
+    return FileResponse(
+        file_path,
+        media_type="image/svg+xml",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
+
 @app.post("/export-png")
 async def export_png(req: ExportPngRequest):
     if not CAIRO_AVAILABLE:
@@ -370,6 +387,40 @@ async def export_png(req: ExportPngRequest):
         )
     except Exception as e:
         return {"error": f"Failed to convert to PNG: {str(e)}"}
+
+@app.post("/export-svg")
+async def export_svg(req: ExportPngRequest):  # Reuse the same request model
+    if req.type == "icon":
+        if req.folder == "Root":
+            filepath = ICON_DIR / req.icon_name
+        else:
+            filepath = ICON_DIR / req.folder / req.icon_name
+    elif req.type == "flag":
+        filepath = FLAG_DIR / req.icon_name
+    else:
+        return {"error": "Invalid type"}
+    
+    if not filepath.exists():
+        return {"error": "File not found"}
+
+    try:
+        # Read the SVG file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            svg_content = f.read()
+        
+        # Return the SVG content as a blob
+        return StreamingResponse(
+            io.BytesIO(svg_content.encode('utf-8')),
+            media_type="image/svg+xml",
+            headers={
+                "Content-Disposition": f"attachment; filename={req.icon_name}",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "*"
+            }
+        )
+    except Exception as e:
+        return {"error": f"Failed to export SVG: {str(e)}"}
 
 @app.post("/export-zip")
 async def export_zip(req: ZipExportRequest):
