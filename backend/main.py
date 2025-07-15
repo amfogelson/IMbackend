@@ -21,6 +21,8 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 import tempfile
 import shutil
 from copy import deepcopy
+from starlette.staticfiles import StaticFiles
+from starlette.responses import Response
 
 # Load environment variables
 load_dotenv()
@@ -148,15 +150,27 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins, or specify your frontend URL
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=ICON_DIR), name="static")
-app.mount("/colorful-icons", StaticFiles(directory=COLORFUL_ICON_DIR), name="colorful-icons")
+class CORSAwareStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+
+# Replace static mounts with CORS-enabled static files
+app.mount("/static-icons", CORSAwareStaticFiles(directory=ICON_DIR), name="static-icons")
+app.mount("/static", CORSAwareStaticFiles(directory=ICON_DIR), name="static")
+# If you have other static mounts (e.g., for colorful icons), add them here as well
+app.mount("/colorful-icons", CORSAwareStaticFiles(directory=COLORFUL_ICON_DIR), name="colorful-icons")
+app.mount("/single-color-files", CORSAwareStaticFiles(directory=COLORFUL_ICON_DIR / "SingleColor"), name="single-color-files")
 # app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")  # Commented out to use custom endpoint with CORS
-app.mount("/static-icons", StaticFiles(directory=ICON_DIR), name="static-icons")
 
 # --- Pydantic Model ---
 class UpdateColorRequest(BaseModel):
@@ -178,6 +192,13 @@ class GreyscaleRequest(BaseModel):
 class RevertRequest(BaseModel):
     icon_name: str
     folder: str = "Root"  # folder name for colorful icons
+
+class SingleColorUpdateRequest(BaseModel):
+    icon_name: str
+    color: str
+
+class SingleColorRevertRequest(BaseModel):
+    icon_name: str
 
 class ZipExportRequest(BaseModel):
     items: list[str]  # List of icon names
@@ -421,6 +442,8 @@ async def export_png(req: ExportPngRequest):
     if req.type == "icon":
         if req.folder == "Root":
             filepath = ICON_DIR / req.icon_name
+        elif req.folder == "SingleColor":
+            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
         else:
             filepath = ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
@@ -455,8 +478,15 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
     if req.type == "icon":
         if req.folder == "Root":
             filepath = ICON_DIR / req.icon_name
+        elif req.folder == "SingleColor":
+            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
         else:
             filepath = ICON_DIR / req.folder / req.icon_name
+    elif req.type == "colorful-icon":
+        if req.folder == "Root":
+            filepath = COLORFUL_ICON_DIR / req.icon_name
+        else:
+            filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     else:
@@ -470,7 +500,39 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
         with open(filepath, 'r', encoding='utf-8') as f:
             svg_content = f.read()
         
-        # Return the SVG content as a blob
+        # Return the SVG content as text for copy functionality
+        return {"svg_content": svg_content}
+    except Exception as e:
+        return {"error": f"Failed to export SVG: {str(e)}"}
+
+@app.post("/download-svg")
+async def download_svg(req: ExportPngRequest):  # Reuse the same request model
+    if req.type == "icon":
+        if req.folder == "Root":
+            filepath = ICON_DIR / req.icon_name
+        elif req.folder == "SingleColor":
+            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
+        else:
+            filepath = ICON_DIR / req.folder / req.icon_name
+    elif req.type == "colorful-icon":
+        if req.folder == "Root":
+            filepath = COLORFUL_ICON_DIR / req.icon_name
+        else:
+            filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
+    elif req.type == "flag":
+        filepath = FLAG_DIR / req.icon_name
+    else:
+        return {"error": "Invalid type"}
+    
+    if not filepath.exists():
+        return {"error": "File not found"}
+
+    try:
+        # Read the SVG file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            svg_content = f.read()
+        
+        # Return the SVG content as a downloadable file
         return StreamingResponse(
             io.BytesIO(svg_content.encode('utf-8')),
             media_type="image/svg+xml",
@@ -482,7 +544,7 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
             }
         )
     except Exception as e:
-        return {"error": f"Failed to export SVG: {str(e)}"}
+        return {"error": f"Failed to download SVG: {str(e)}"}
 
 @app.post("/export-zip")
 async def export_zip(req: ZipExportRequest):
@@ -735,6 +797,93 @@ async def get_colorful_icons():
     
     return {"folders": sorted_folders}
 
+@app.get("/single-color")
+async def get_single_color_icons():
+    # Get all files in the SingleColor directory
+    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    
+    if not single_color_dir.exists():
+        return {"icons": []}
+    
+    # Get all PNG and SVG files
+    png_files = [f.stem for f in single_color_dir.glob("*.png")]
+    svg_files = [f.stem for f in single_color_dir.glob("*.svg")]
+    
+    # Combine and sort all files
+    all_files = sorted(png_files + svg_files)
+    
+    return {"icons": all_files}
+
+@app.post("/single-color/update")
+async def update_single_color_icon(req: SingleColorUpdateRequest):
+    """Update the color of a single color icon (PNG or SVG)"""
+    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    
+    if not single_color_dir.exists():
+        return {"error": "SingleColor directory not found"}
+    
+    # Check for both PNG and SVG files
+    png_file = single_color_dir / f"{req.icon_name}.png"
+    svg_file = single_color_dir / f"{req.icon_name}.svg"
+    
+    if not png_file.exists() and not svg_file.exists():
+        return {"error": "Icon not found"}
+    
+    try:
+        if svg_file.exists():
+            # Handle SVG file
+            create_backup(svg_file)
+            
+            ET.register_namespace('', "http://www.w3.org/2000/svg")
+            tree = ET.parse(svg_file)
+            root = tree.getroot()
+            
+            # Update all elements that can have colors
+            for element in root.findall(".//{http://www.w3.org/2000/svg}path") + root.findall(".//{http://www.w3.org/2000/svg}rect") + root.findall(".//{http://www.w3.org/2000/svg}circle") + root.findall(".//{http://www.w3.org/2000/svg}ellipse") + root.findall(".//{http://www.w3.org/2000/svg}polygon") + root.findall(".//{http://www.w3.org/2000/svg}polyline") + root.findall(".//{http://www.w3.org/2000/svg}line"):
+                update_element_color(element, req.color)
+            
+            # Save the modified SVG
+            tree.write(svg_file, encoding='utf-8', xml_declaration=True)
+            
+        elif png_file.exists():
+            # For PNG files, we'll need to convert them to SVG or handle them differently
+            # For now, we'll return an error suggesting to use SVG format
+            return {"error": "PNG files cannot be recolored. Please use SVG format for color changes."}
+        
+        return {"status": "Color updated successfully"}
+        
+    except Exception as e:
+        return {"error": f"Failed to update color: {str(e)}"}
+
+@app.post("/single-color/revert")
+async def revert_single_color_icon(req: SingleColorRevertRequest):
+    """Revert a single color icon to its original state"""
+    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    
+    if not single_color_dir.exists():
+        return {"error": "SingleColor directory not found"}
+    
+    # Check for both PNG and SVG files
+    png_file = single_color_dir / f"{req.icon_name}.png"
+    svg_file = single_color_dir / f"{req.icon_name}.svg"
+    
+    if not png_file.exists() and not svg_file.exists():
+        return {"error": "Icon not found"}
+    
+    try:
+        if svg_file.exists():
+            # Restore from backup
+            if restore_from_backup(svg_file):
+                return {"status": "Reverted to original color"}
+            else:
+                return {"error": "No backup found to revert from"}
+        elif png_file.exists():
+            # For PNG files, we'll need to handle them differently
+            return {"error": "PNG files cannot be reverted. Please use SVG format for color changes."}
+        
+    except Exception as e:
+        return {"error": f"Failed to revert color: {str(e)}"}
+
 @app.post("/greyscale")
 async def convert_to_greyscale_endpoint(req: GreyscaleRequest):
     if req.folder == "Root":
@@ -928,7 +1077,7 @@ def download_infographic_pptx(infographic_name: str):
     return response
 
 # Now mount the static files for infographics (after the download endpoint)
-app.mount("/infographics", StaticFiles(directory=BASE_DIR / "infographics"), name="infographics")
+app.mount("/infographics", CORSAwareStaticFiles(directory=BASE_DIR / "infographics"), name="infographics")
 
 if __name__ == "__main__":
     import uvicorn
