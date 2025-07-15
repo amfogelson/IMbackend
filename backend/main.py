@@ -36,7 +36,7 @@ EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
 EMAIL_FROM = os.getenv('EMAIL_FROM', '')
 EMAIL_TO = os.getenv('EMAIL_TO', '')
 
-def send_feedback_notification(feedback_type, feedback_message, feedback_id):
+def send_feedback_notification(feedback_type, feedback_message, feedback_id, user_email=""):
     """Send email notification for new feedback submission"""
     if not EMAIL_ENABLED or not all([EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_FROM, EMAIL_TO]):
         print("Email notifications disabled or configuration incomplete")
@@ -57,6 +57,7 @@ Feedback Details:
 - ID: {feedback_id}
 - Type: {feedback_type}
 - Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- User Email: {user_email if user_email else 'Not provided'}
 - Message: {feedback_message}
 
 You can view and manage this feedback through the admin interface.
@@ -80,6 +81,50 @@ Icon Manager System
         
     except Exception as e:
         print(f"Error sending email notification: {e}")
+        return False
+
+def send_feedback_response(user_email, feedback_id, response_message):
+    """Send response email to user who submitted feedback"""
+    if not EMAIL_ENABLED or not all([EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_FROM]) or not user_email:
+        print("Email notifications disabled, configuration incomplete, or no user email provided")
+        return False
+    
+    try:
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_FROM
+        msg['To'] = user_email
+        msg['Subject'] = f"Response to your feedback (ID: {feedback_id})"
+        
+        # Create email body
+        body = f"""
+Thank you for your feedback on the Icon Manager application.
+
+We have reviewed your feedback and would like to respond:
+
+{response_message}
+
+If you have any further questions or concerns, please don't hesitate to reach out.
+
+Best regards,
+Icon Manager Team
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        server = smtplib.SMTP(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(EMAIL_FROM, user_email, text)
+        server.quit()
+        
+        print(f"Response email sent to {user_email} for feedback ID {feedback_id}")
+        return True
+        
+    except Exception as e:
+        print(f"Error sending response email: {e}")
         return False
 
 # Try to import cairosvg, but make it optional
@@ -143,6 +188,11 @@ class ZipExportRequest(BaseModel):
 class FeedbackRequest(BaseModel):
     type: str
     message: str
+    email: str = ""  # Optional email for user to receive responses
+
+class FeedbackResponseRequest(BaseModel):
+    feedback_id: int
+    response_message: str
 
 # --- Feedback Storage ---
 FEEDBACK_DIR = BASE_DIR / "feedback_submissions"
@@ -157,13 +207,24 @@ def load_feedback():
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     lines = f.readlines()
-                    if len(lines) >= 4:
+                    if len(lines) >= 5:  # Updated to include email
                         feedback = {
                             "id": int(file_path.stem),  # filename without extension
                             "timestamp": lines[0].strip(),
                             "type": lines[1].strip(),
                             "status": lines[2].strip(),
-                            "message": "".join(lines[3:]).strip()  # rest of the file
+                            "email": lines[3].strip(),
+                            "message": "".join(lines[4:]).strip()  # rest of the file
+                        }
+                        feedback_list.append(feedback)
+                    elif len(lines) >= 4:  # Backward compatibility for old format
+                        feedback = {
+                            "id": int(file_path.stem),
+                            "timestamp": lines[0].strip(),
+                            "type": lines[1].strip(),
+                            "status": lines[2].strip(),
+                            "email": "",
+                            "message": "".join(lines[3:]).strip()
                         }
                         feedback_list.append(feedback)
             except Exception as e:
@@ -171,7 +232,7 @@ def load_feedback():
     
     return feedback_list
 
-def save_feedback(feedback_type, feedback_message):
+def save_feedback(feedback_type, feedback_message, email=""):
     """Save a new feedback submission as a file"""
     try:
         # Get the next available ID
@@ -190,6 +251,7 @@ def save_feedback(feedback_type, feedback_message):
             f.write(f"{timestamp}\n")
             f.write(f"{feedback_type}\n")
             f.write("new\n")  # default status
+            f.write(f"{email}\n")  # user's email
             f.write(f"{feedback_message}\n")
         
         return next_id
@@ -769,11 +831,11 @@ async def check_greyscale(folder_name: str, icon_name: str):
 async def submit_feedback(req: FeedbackRequest):
     """Submit feedback from users"""
     try:
-        feedback_id = save_feedback(req.type, req.message)
+        feedback_id = save_feedback(req.type, req.message, req.email)
         
         if feedback_id:
             # Send email notification
-            send_feedback_notification(req.type, req.message, feedback_id)
+            send_feedback_notification(req.type, req.message, feedback_id, req.email)
             return {"status": "Feedback submitted successfully", "id": feedback_id}
         else:
             return {"error": "Failed to save feedback"}
@@ -801,6 +863,31 @@ async def update_feedback_status(feedback_id: int, status: str):
             return {"error": "Feedback not found"}
     except Exception as e:
         return {"error": f"Failed to update feedback status: {str(e)}"}
+
+@app.post("/feedback/respond")
+async def respond_to_feedback(req: FeedbackResponseRequest):
+    """Send a response email to the user who submitted feedback"""
+    try:
+        # Load the feedback to get the user's email
+        feedback_list = load_feedback()
+        feedback = next((f for f in feedback_list if f["id"] == req.feedback_id), None)
+        
+        if not feedback:
+            return {"error": "Feedback not found"}
+        
+        user_email = feedback.get("email", "")
+        if not user_email:
+            return {"error": "No email address provided with this feedback"}
+        
+        # Send response email
+        if send_feedback_response(user_email, req.feedback_id, req.response_message):
+            # Update status to 'responded'
+            update_feedback_status_file(req.feedback_id, "responded")
+            return {"status": "Response sent successfully"}
+        else:
+            return {"error": "Failed to send response email"}
+    except Exception as e:
+        return {"error": f"Failed to respond to feedback: {str(e)}"}
 
 @app.get("/infographics")
 def list_infographics():
