@@ -1046,51 +1046,29 @@ def list_infographics():
     return {"infographics": files}
 
 @app.get("/infographics/{infographic_name}/download")
-def download_infographic_pptx(infographic_name: str, theme: str = "light"):
+def download_infographic_pptx(infographic_name: str):
     """
-    Given an infographic PNG name and theme, return the appropriate PowerPoint file with all slides.
+    Given an infographic PNG name, return the original PowerPoint file with all slides.
     This preserves the original shapes and formatting, even if there are some corruption issues.
     """
     base_dir = os.path.dirname(__file__)
     infographics_dir = os.path.join(base_dir, "../infographics")
     
-    # Use the same BASE_DIR that's used for static mounts
-    infographics_dir = str(BASE_DIR / "infographics")
+    # Use the original master PowerPoint file
+    master_pptx_path = os.path.join(infographics_dir, "infographics_master.pptx")
     
-    # Debug: Print the actual path being used
-    print(f"[DEBUG] base_dir: {base_dir}")
-    print(f"[DEBUG] infographics_dir: {infographics_dir}")
-    print(f"[DEBUG] Files in directory: {os.listdir(infographics_dir) if os.path.exists(infographics_dir) else 'Directory not found'}")
-    
-    # Use the theme-specific master PowerPoint file
-    master_pptx_path = os.path.join(infographics_dir, f"infographics_master_{theme}.pptx")
-    
-    # Fallback to the light theme if theme-specific file doesn't exist
-    if not os.path.exists(master_pptx_path):
-        if theme != "light":
-            print(f"[WARNING] {theme} theme PPTX not found, falling back to light theme")
-            master_pptx_path = os.path.join(infographics_dir, "infographics_master_light.pptx")
-            theme = "light"  # Update theme for filename
-    
-    # Final fallback to any available PPTX file
-    if not os.path.exists(master_pptx_path):
-        # Look for any PPTX file in the directory
-        pptx_files = [f for f in os.listdir(infographics_dir) if f.endswith('.pptx')]
-        if pptx_files:
-            master_pptx_path = os.path.join(infographics_dir, pptx_files[0])
-            theme = pptx_files[0].replace('infographics_master_', '').replace('.pptx', '')
-            print(f"[WARNING] Using fallback PPTX: {pptx_files[0]}")
-        else:
-            print(f"[ERROR] No PPTX files found in: {infographics_dir}")
-            raise HTTPException(status_code=404, detail="No PowerPoint files available")
-    
-    print(f"[DEBUG] Download request for: {infographic_name} with theme: {theme}")
+    print(f"[DEBUG] Download request for: {infographic_name}")
     print(f"[DEBUG] infographics_dir: {infographics_dir}")
     print(f"[DEBUG] master_pptx_path: {master_pptx_path}")
 
-    # Return the PowerPoint file directly
-    filename = f"infographics_master_{theme}.pptx"
-    print(f"[DEBUG] Returning PPTX: {master_pptx_path} as {filename}")
+    # Check if master PPTX exists
+    if not os.path.exists(master_pptx_path):
+        print(f"[ERROR] Master PPTX not found at: {master_pptx_path}")
+        raise HTTPException(status_code=404, detail="Master PPTX not found")
+
+    # Return the original PowerPoint file directly
+    filename = "infographics_master.pptx"
+    print(f"[DEBUG] Returning original PPTX: {master_pptx_path} as {filename}")
     response = FileResponse(
         master_pptx_path, 
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
