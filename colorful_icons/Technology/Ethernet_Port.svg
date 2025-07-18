@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48.024 48.024">
+  <g id="Icons">
+    <g id="_108" data-name="108">
+      <rect width="48.024" height="48.024" rx="2.783" ry="2.783" fill="#d9defb"/>
+      <path d="M43.024,44.024H5c-.552,0-1-.448-1-1V5c0-.552.448-1,1-1h38.024c.552,0,1,.448,1,1v38.024c0,.552-.448,1-1,1ZM6,42.024h36.024V6H6v36.024Z" fill="#c5cced"/>
+      <polygon points="39.164 9.312 39.164 28.829 35.182 28.829 35.182 33.772 31.673 33.772 31.673 38.716 16.352 38.716 16.352 33.772 12.842 33.772 12.842 28.829 8.86 28.829 8.86 9.312 39.164 9.312" fill="#455a64"/>
+      <g>
+        <rect x="10.169" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="13.38" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="16.59" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="19.8" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="23.011" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="26.221" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="29.432" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="32.642" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+        <rect x="35.853" y="10.915" width="2.003" height="5.665" fill="#ffd54f"/>
+      </g>
+    </g>
+  </g>
+</svg>
