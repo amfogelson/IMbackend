@@ -4,16 +4,10 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies with better error handling
+# Install minimal system dependencies (no Cairo)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
-    libpango1.0-dev \
-    libcairo2-dev \
-    libgdk-pixbuf2.0-dev \
-    libffi-dev \
-    libjpeg-dev \
-    libpng-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

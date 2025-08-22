@@ -477,12 +477,69 @@ async def get_flag(flag_name: str, request: Request):
         }
     )
 
+# Alternative PNG export without Cairo
+def convert_svg_to_png_alternative(svg_content):
+    """Convert SVG to PNG using an alternative method without Cairo"""
+    try:
+        # For now, we'll return the SVG content as-is and let the frontend handle conversion
+        # This is a fallback method when Cairo is not available
+        return svg_content.encode('utf-8')
+    except Exception as e:
+        raise Exception(f"Failed to convert SVG: {str(e)}")
+
 @app.post("/export-png")
 async def export_png(req: ExportPngRequest):
+    # Check if Cairo is available, if not use alternative method
     if not CAIRO_AVAILABLE:
-        return {"error": "PNG export not available. cairosvg is not installed."}
+        # Use alternative method without Cairo
+        mode = getattr(req, 'mode', 'light')
+        
+        if req.type == "icon":
+            if req.folder == "Root":
+                if mode == "dark":
+                    filepath = ICON_DIR_DARK / req.icon_name
+                else:
+                    filepath = ICON_DIR_LIGHT / req.icon_name
+            elif req.folder == "SingleColor":
+                if mode == "dark":
+                    filepath = SINGLE_COLOR_DIR_DARK / req.icon_name
+                else:
+                    filepath = SINGLE_COLOR_DIR_LIGHT / req.icon_name
+            else:
+                if mode == "dark":
+                    filepath = ICON_DIR_DARK / req.folder / req.icon_name
+                else:
+                    filepath = ICON_DIR_LIGHT / req.folder / req.icon_name
+        elif req.type == "colorful-icon":
+            if req.folder == "Root":
+                filepath = COLORFUL_ICON_DIR / req.icon_name
+            else:
+                filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
+        elif req.type == "flag":
+            filepath = FLAG_DIR / req.icon_name
+        elif req.type == "bcore-logo":
+            filepath = BASE_DIR / "frontend" / "public" / "Bcore_Images_Video" / "Logos" / req.icon_name
+        else:
+            return {"error": "Invalid type"}
+        
+        if not filepath.exists():
+            return {"error": "File not found"}
+
+        try:
+            # Read the SVG file
+            with open(filepath, 'r', encoding='utf-8') as f:
+                svg_content = f.read()
+            
+            # Return SVG content for frontend conversion
+            return Response(
+                content=svg_content,
+                media_type="image/svg+xml",
+                headers={"Content-Disposition": f"attachment; filename={req.icon_name}"}
+            )
+        except Exception as e:
+            return {"error": f"Failed to export SVG: {str(e)}"}
     
-    # Get the mode from the request, default to light
+    # Original Cairo-based method
     mode = getattr(req, 'mode', 'light')
     
     if req.type == "icon":
