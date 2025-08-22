@@ -1325,8 +1325,8 @@ def serve_bcore_file(filename: str):
     # Decode URL-encoded filename
     decoded_filename = unquote(filename)
     
-    # Use BASE_DIR to navigate to the frontend directory
-    bcore_dir = BASE_DIR.parent / "frontend" / "public" / "Bcore_Images_Video"
+    # Use local BCORE directory in the backend
+    bcore_dir = BASE_DIR / "bcore_files"
     
     # Check if it's a video file and look in Videos subfolder
     if decoded_filename.lower().endswith(('.mp4', '.mov', '.avi')):

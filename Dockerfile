@@ -15,8 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your code
+# Copy the backend code
 COPY . .
+
+# Create directory for BCORE files
+RUN mkdir -p /app/bcore_files
 
 # Expose the port uvicorn will run on
 EXPOSE 8000
