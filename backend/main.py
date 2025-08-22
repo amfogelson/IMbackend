@@ -1369,7 +1369,7 @@ def serve_bcore_file(filename: str):
     return FileResponse(str(file_path), media_type=content_type)
 
 # Now mount the static files for infographics (after the download endpoint)
-app.mount("/infographics", CORSAwareStaticFiles(directory=BASE_DIR.parent / "infographics"), name="infographics")
+app.mount("/infographics", CORSAwareStaticFiles(directory=BASE_DIR / "infographics"), name="infographics")
 
 if __name__ == "__main__":
     import uvicorn
