@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.82 179.819">
+  <g id="Color" fill="#00ABF6">
+    <rect x="22.094" y="126.522" width="11.106" height="31.439" />
+    <rect x="46.29" y="101.252" width="11.106" height="56.71" />
+    <rect x="70.487" y="55.884" width="11.105" height="102.078" />
+    <rect x="94.684" y="101.252" width="11.105" height="56.71" />
+    <rect x="118.88" y="55.884" width="11.105" height="102.078" />
+    <rect x="143.076" y="101.252" width="11.106" height="56.71" />
+  </g>
+  <g id="Grey" fill="#282828">
+    <polygon points="13.469 166.351 179.82 166.351 179.82 179.819 0 179.819 0 0 13.469 0 13.469 166.351" fill-rule="evenodd" />
+  </g>
+</svg>

@@ -23,6 +23,7 @@ import shutil
 from copy import deepcopy
 from starlette.staticfiles import StaticFiles
 from starlette.responses import Response
+from urllib.parse import unquote
 
 # Load environment variables
 load_dotenv()
@@ -142,9 +143,21 @@ BASE_DIR = Path(__file__).parent.parent
 ICON_DIR = BASE_DIR / "exported_svgs"
 COLORFUL_ICON_DIR = BASE_DIR / "colorful_icons"  # New directory for colorful icons
 FLAG_DIR = BASE_DIR / "flags"  # New directory for flags
+
+# Light/Dark mode directories (only for regular icons and single color icons)
+ICON_DIR_LIGHT = ICON_DIR / "light"
+ICON_DIR_DARK = ICON_DIR / "dark"
+SINGLE_COLOR_DIR_LIGHT = COLORFUL_ICON_DIR / "SingleColor" / "light"
+SINGLE_COLOR_DIR_DARK = COLORFUL_ICON_DIR / "SingleColor" / "dark"
+
+# Create directories
 ICON_DIR.mkdir(exist_ok=True)
+ICON_DIR_LIGHT.mkdir(exist_ok=True)
+ICON_DIR_DARK.mkdir(exist_ok=True)
 COLORFUL_ICON_DIR.mkdir(exist_ok=True)
 FLAG_DIR.mkdir(exist_ok=True)
+SINGLE_COLOR_DIR_LIGHT.mkdir(exist_ok=True)
+SINGLE_COLOR_DIR_DARK.mkdir(exist_ok=True)
 
 app = FastAPI()
 
@@ -167,9 +180,13 @@ class CORSAwareStaticFiles(StaticFiles):
 # Replace static mounts with CORS-enabled static files
 app.mount("/static-icons", CORSAwareStaticFiles(directory=ICON_DIR), name="static-icons")
 app.mount("/static", CORSAwareStaticFiles(directory=ICON_DIR), name="static")
+app.mount("/static-icons-light", CORSAwareStaticFiles(directory=ICON_DIR_LIGHT), name="static-icons-light")
+app.mount("/static-icons-dark", CORSAwareStaticFiles(directory=ICON_DIR_DARK), name="static-icons-dark")
 # If you have other static mounts (e.g., for colorful icons), add them here as well
 app.mount("/colorful-icons", CORSAwareStaticFiles(directory=COLORFUL_ICON_DIR), name="colorful-icons")
 app.mount("/single-color-files", CORSAwareStaticFiles(directory=COLORFUL_ICON_DIR / "SingleColor"), name="single-color-files")
+app.mount("/single-color-files-light", CORSAwareStaticFiles(directory=SINGLE_COLOR_DIR_LIGHT), name="single-color-files-light")
+app.mount("/single-color-files-dark", CORSAwareStaticFiles(directory=SINGLE_COLOR_DIR_DARK), name="single-color-files-dark")
 # app.mount("/flags", StaticFiles(directory=FLAG_DIR), name="flags")  # Commented out to use custom endpoint with CORS
 
 # --- Pydantic Model ---
@@ -179,32 +196,39 @@ class UpdateColorRequest(BaseModel):
     color: str
     type: str = "icon"  # "icon" or "flag"
     folder: str = "Root"  # folder name for icons
+    mode: str = "light"  # "light" or "dark"
 
 class ExportPngRequest(BaseModel):
     icon_name: str
     type: str = "icon"  # "icon" or "flag"
     folder: str = "Root"  # folder name for icons
+    mode: str = "light"  # "light" or "dark"
 
 class GreyscaleRequest(BaseModel):
     icon_name: str
     folder: str = "Root"  # folder name for colorful icons
+    mode: str = "light"  # "light" or "dark"
 
 class RevertRequest(BaseModel):
     icon_name: str
     folder: str = "Root"  # folder name for colorful icons
+    mode: str = "light"  # "light" or "dark"
 
 class SingleColorUpdateRequest(BaseModel):
     icon_name: str
     color: str
+    mode: str = "light"  # "light" or "dark"
 
 class SingleColorRevertRequest(BaseModel):
     icon_name: str
+    mode: str = "light"  # "light" or "dark"
 
 class ZipExportRequest(BaseModel):
     items: list[str]  # List of icon names
     type: str = "icon"  # "icon", "colorful-icon", or "flag"
     folder: str = "Root"  # folder name for icons
     format: str = "svg"  # "svg" or "png"
+    mode: str = "light"  # "light" or "dark"
 
 class FeedbackRequest(BaseModel):
     type: str
@@ -218,6 +242,25 @@ class FeedbackResponseRequest(BaseModel):
 # --- Feedback Storage ---
 FEEDBACK_DIR = BASE_DIR / "feedback_submissions"
 FEEDBACK_DIR.mkdir(exist_ok=True)
+
+def get_icon_directory(icon_type: str, folder: str = "Root", mode: str = "light") -> Path:
+    """Get the appropriate directory for icons based on type, folder, and mode"""
+    if icon_type == "icon":
+        if folder == "Root":
+            return ICON_DIR_LIGHT if mode == "light" else ICON_DIR_DARK
+        else:
+            # For subfolders, use mode-specific directories
+            base_dir = ICON_DIR_LIGHT if mode == "light" else ICON_DIR_DARK
+            return base_dir / folder
+    elif icon_type == "colorful-icon":
+        # Colorful icons use the same directory regardless of mode
+        return COLORFUL_ICON_DIR
+    elif icon_type == "single-color":
+        return SINGLE_COLOR_DIR_LIGHT if mode == "light" else SINGLE_COLOR_DIR_DARK
+    elif icon_type == "flag":
+        return FLAG_DIR
+    else:
+        return ICON_DIR
 
 def load_feedback():
     """Load feedback from individual files"""
@@ -439,13 +482,30 @@ async def export_png(req: ExportPngRequest):
     if not CAIRO_AVAILABLE:
         return {"error": "PNG export not available. cairosvg is not installed."}
     
+    # Get the mode from the request, default to light
+    mode = getattr(req, 'mode', 'light')
+    
     if req.type == "icon":
         if req.folder == "Root":
-            filepath = ICON_DIR / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.icon_name
         elif req.folder == "SingleColor":
-            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
+            if mode == "dark":
+                filepath = SINGLE_COLOR_DIR_DARK / req.icon_name
+            else:
+                filepath = SINGLE_COLOR_DIR_LIGHT / req.icon_name
         else:
-            filepath = ICON_DIR / req.folder / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.folder / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.folder / req.icon_name
+    elif req.type == "colorful-icon":
+        if req.folder == "Root":
+            filepath = COLORFUL_ICON_DIR / req.icon_name
+        else:
+            filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     else:
@@ -475,13 +535,25 @@ async def export_png(req: ExportPngRequest):
 
 @app.post("/export-svg")
 async def export_svg(req: ExportPngRequest):  # Reuse the same request model
+    # Get the mode from the request, default to light
+    mode = getattr(req, 'mode', 'light')
+    
     if req.type == "icon":
         if req.folder == "Root":
-            filepath = ICON_DIR / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.icon_name
         elif req.folder == "SingleColor":
-            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
+            if mode == "dark":
+                filepath = SINGLE_COLOR_DIR_DARK / req.icon_name
+            else:
+                filepath = SINGLE_COLOR_DIR_LIGHT / req.icon_name
         else:
-            filepath = ICON_DIR / req.folder / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.folder / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.folder / req.icon_name
     elif req.type == "colorful-icon":
         if req.folder == "Root":
             filepath = COLORFUL_ICON_DIR / req.icon_name
@@ -507,13 +579,25 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
 
 @app.post("/download-svg")
 async def download_svg(req: ExportPngRequest):  # Reuse the same request model
+    # Get the mode from the request, default to light
+    mode = getattr(req, 'mode', 'light')
+    
     if req.type == "icon":
         if req.folder == "Root":
-            filepath = ICON_DIR / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.icon_name
         elif req.folder == "SingleColor":
-            filepath = COLORFUL_ICON_DIR / "SingleColor" / req.icon_name
+            if mode == "dark":
+                filepath = SINGLE_COLOR_DIR_DARK / req.icon_name
+            else:
+                filepath = SINGLE_COLOR_DIR_LIGHT / req.icon_name
         else:
-            filepath = ICON_DIR / req.folder / req.icon_name
+            if mode == "dark":
+                filepath = ICON_DIR_DARK / req.folder / req.icon_name
+            else:
+                filepath = ICON_DIR_LIGHT / req.folder / req.icon_name
     elif req.type == "colorful-icon":
         if req.folder == "Root":
             filepath = COLORFUL_ICON_DIR / req.icon_name
@@ -553,20 +637,34 @@ async def export_zip(req: ZipExportRequest):
         # Create a ZIP file in memory
         zip_buffer = io.BytesIO()
         
+        # Get the mode from the request, default to light
+        mode = getattr(req, 'mode', 'light')
+        
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for item_name in req.items:
                 try:
                     # Determine the source file path
                     if req.type == "icon":
                         if req.folder == "Root":
-                            source_path = ICON_DIR / f"{item_name}.svg"
+                            if mode == "dark":
+                                source_path = ICON_DIR_DARK / f"{item_name}.svg"
+                            else:
+                                source_path = ICON_DIR_LIGHT / f"{item_name}.svg"
                         else:
-                            source_path = ICON_DIR / req.folder / f"{item_name}.svg"
+                            if mode == "dark":
+                                source_path = ICON_DIR_DARK / req.folder / f"{item_name}.svg"
+                            else:
+                                source_path = ICON_DIR_LIGHT / req.folder / f"{item_name}.svg"
                     elif req.type == "colorful-icon":
                         if req.folder == "Root":
                             source_path = COLORFUL_ICON_DIR / f"{item_name}.svg"
                         else:
                             source_path = COLORFUL_ICON_DIR / req.folder / f"{item_name}.svg"
+                    elif req.type == "single-color":
+                        if mode == "dark":
+                            source_path = SINGLE_COLOR_DIR_DARK / f"{item_name}.svg"
+                        else:
+                            source_path = SINGLE_COLOR_DIR_LIGHT / f"{item_name}.svg"
                     else:  # flag
                         source_path = FLAG_DIR / f"{item_name}.svg"
                     
@@ -694,12 +792,12 @@ async def update_color(req: UpdateColorRequest):
         print(f"DEBUG: update_color called with {req}", flush=True)
         print("DEBUG: Starting function execution...", flush=True)
         
+        # Get the appropriate directory based on type, folder, and mode
+        icon_dir = get_icon_directory(req.type, req.folder, req.mode)
+        
         if req.type == "icon" or req.type == "icons":
             print("DEBUG: Type is icon", flush=True)
-            if req.folder == "Root":
-                filepath = ICON_DIR / req.icon_name
-            else:
-                filepath = ICON_DIR / req.folder / req.icon_name
+            filepath = icon_dir / req.icon_name
         elif req.type == "flag":
             print("DEBUG: Type is flag", flush=True)
             filepath = FLAG_DIR / req.icon_name
@@ -761,6 +859,9 @@ async def update_color(req: UpdateColorRequest):
         for style_block in list(root.findall("svg:style", namespaces)):
             root.remove(style_block)
 
+        # Ensure the directory exists
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
         # Write the file back
         print(f"DEBUG: Writing file back to {filepath}", flush=True)
         tree.write(filepath, encoding='utf-8', xml_declaration=True)
@@ -799,28 +900,35 @@ async def get_colorful_icons():
 
 @app.get("/single-color")
 async def get_single_color_icons():
-    # Get all files in the SingleColor directory
-    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    # Get all files from both light and dark mode directories
+    light_dir = SINGLE_COLOR_DIR_LIGHT
+    dark_dir = SINGLE_COLOR_DIR_DARK
     
-    if not single_color_dir.exists():
-        return {"icons": []}
+    all_files = set()
     
-    # Get all PNG and SVG files
-    png_files = [f.stem for f in single_color_dir.glob("*.png")]
-    svg_files = [f.stem for f in single_color_dir.glob("*.svg")]
+    # Get files from light directory
+    if light_dir.exists():
+        png_files = [f.stem for f in light_dir.glob("*.png")]
+        svg_files = [f.stem for f in light_dir.glob("*.svg")]
+        all_files.update(png_files + svg_files)
     
-    # Combine and sort all files
-    all_files = sorted(png_files + svg_files)
+    # Get files from dark directory
+    if dark_dir.exists():
+        png_files = [f.stem for f in dark_dir.glob("*.png")]
+        svg_files = [f.stem for f in dark_dir.glob("*.svg")]
+        all_files.update(png_files + svg_files)
     
-    return {"icons": all_files}
+    # Return sorted list of unique files
+    return {"icons": sorted(list(all_files))}
 
 @app.post("/single-color/update")
 async def update_single_color_icon(req: SingleColorUpdateRequest):
     """Update the color of a single color icon (PNG or SVG)"""
-    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    # Use mode-specific directory
+    single_color_dir = SINGLE_COLOR_DIR_LIGHT if req.mode == "light" else SINGLE_COLOR_DIR_DARK
     
     if not single_color_dir.exists():
-        return {"error": "SingleColor directory not found"}
+        return {"error": f"SingleColor {req.mode} directory not found"}
     
     # Check for both PNG and SVG files
     png_file = single_color_dir / f"{req.icon_name}.png"
@@ -858,10 +966,11 @@ async def update_single_color_icon(req: SingleColorUpdateRequest):
 @app.post("/single-color/revert")
 async def revert_single_color_icon(req: SingleColorRevertRequest):
     """Revert a single color icon to its original state"""
-    single_color_dir = COLORFUL_ICON_DIR / "SingleColor"
+    # Use mode-specific directory
+    single_color_dir = SINGLE_COLOR_DIR_LIGHT if req.mode == "light" else SINGLE_COLOR_DIR_DARK
     
     if not single_color_dir.exists():
-        return {"error": "SingleColor directory not found"}
+        return {"error": f"SingleColor {req.mode} directory not found"}
     
     # Check for both PNG and SVG files
     png_file = single_color_dir / f"{req.icon_name}.png"
@@ -872,11 +981,23 @@ async def revert_single_color_icon(req: SingleColorRevertRequest):
     
     try:
         if svg_file.exists():
-            # Restore from backup
-            if restore_from_backup(svg_file):
-                return {"status": "Reverted to original color"}
-            else:
-                return {"error": "No backup found to revert from"}
+            # Reset to default color for the current mode
+            ET.register_namespace('', "http://www.w3.org/2000/svg")
+            tree = ET.parse(svg_file)
+            root = tree.getroot()
+            
+            # Set default color based on mode
+            default_color = "#282828" if req.mode == "light" else "#D3D3D3"
+            
+            # Update all elements to the default color
+            for element in root.iter():
+                if element.tag.endswith(('path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line')):
+                    if element.get('fill') and element.get('fill') != 'none':
+                        element.set('fill', default_color)
+            
+            # Save the modified SVG
+            tree.write(svg_file, encoding='utf-8', xml_declaration=True)
+            return {"status": "Reverted to original color"}
         elif png_file.exists():
             # For PNG files, we'll need to handle them differently
             return {"error": "PNG files cannot be reverted. Please use SVG format for color changes."}
@@ -1097,6 +1218,93 @@ def download_infographic_pptx(infographic_name: str, theme: str = "light"):
         filename=filename
     )
     return response
+
+
+
+
+
+@app.get("/bcore/thumbnail/{filename:path}")
+def serve_bcore_thumbnail(filename: str):
+    """Serve BCORE video thumbnails"""
+    # Decode URL-encoded filename
+    decoded_filename = unquote(filename)
+    
+    print(f"[DEBUG] Thumbnail request for: {filename}")
+    print(f"[DEBUG] Decoded filename: {decoded_filename}")
+    
+    # Create thumbnails directory path
+    thumbnails_dir = Path(__file__).parent / "thumbnails"
+    
+    # Generate thumbnail filename - try both .png and .PNG
+    thumbnail_filename_lower = f"{Path(decoded_filename).stem}.png"
+    thumbnail_filename_upper = f"{Path(decoded_filename).stem}.PNG"
+    thumbnail_path_lower = thumbnails_dir / thumbnail_filename_lower
+    thumbnail_path_upper = thumbnails_dir / thumbnail_filename_upper
+    
+    print(f"[DEBUG] Looking for thumbnail: {thumbnail_path_lower}")
+    print(f"[DEBUG] Also looking for: {thumbnail_path_upper}")
+    
+    # Check if thumbnail exists (try both cases)
+    if thumbnail_path_lower.exists():
+        thumbnail_path = thumbnail_path_lower
+        print(f"[DEBUG] Found thumbnail (lowercase): {thumbnail_path}")
+    elif thumbnail_path_upper.exists():
+        thumbnail_path = thumbnail_path_upper
+        print(f"[DEBUG] Found thumbnail (uppercase): {thumbnail_path}")
+    else:
+        raise HTTPException(status_code=404, detail=f"Thumbnail not found: {thumbnail_filename_lower} or {thumbnail_filename_upper}")
+    
+    print(f"[DEBUG] Serving thumbnail: {thumbnail_path}")
+    return FileResponse(str(thumbnail_path), media_type="image/png")
+
+@app.get("/bcore/{filename:path}")
+def serve_bcore_file(filename: str):
+    """Serve BCORE branding files from the frontend public directory"""
+    # Decode URL-encoded filename
+    decoded_filename = unquote(filename)
+    
+    # Use BASE_DIR to navigate to the frontend directory
+    bcore_dir = BASE_DIR.parent / "frontend" / "public" / "Bcore_Images_Video"
+    
+    # Check if it's a video file and look in Videos subfolder
+    if decoded_filename.lower().endswith(('.mp4', '.mov', '.avi')):
+        file_path = bcore_dir / "Videos" / decoded_filename
+    # Check if it's an SVG file and look in Logos subfolder
+    elif decoded_filename.lower().endswith('.svg'):
+        file_path = bcore_dir / "Logos" / decoded_filename
+    # Check if it's an image file and look in Images subfolder
+    elif decoded_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        file_path = bcore_dir / "Images" / decoded_filename
+    else:
+        file_path = bcore_dir / decoded_filename
+    
+    print(f"[DEBUG] BCORE request for: {filename}")
+    print(f"[DEBUG] Decoded filename: {decoded_filename}")
+    print(f"[DEBUG] bcore_dir: {bcore_dir}")
+    print(f"[DEBUG] file_path: {file_path}")
+    print(f"[DEBUG] file exists: {file_path.exists()}")
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+    
+    # Determine content type based on file extension
+    content_type = "application/octet-stream"
+    if decoded_filename.lower().endswith('.mp4'):
+        content_type = "video/mp4"
+    elif decoded_filename.lower().endswith('.mov'):
+        content_type = "video/quicktime"
+    elif decoded_filename.lower().endswith('.avi'):
+        content_type = "video/x-msvideo"
+    elif decoded_filename.lower().endswith('.png'):
+        content_type = "image/png"
+    elif decoded_filename.lower().endswith('.jpg') or decoded_filename.lower().endswith('.jpeg'):
+        content_type = "image/jpeg"
+    elif decoded_filename.lower().endswith('.gif'):
+        content_type = "image/gif"
+    elif decoded_filename.lower().endswith('.svg'):
+        content_type = "image/svg+xml"
+    
+    return FileResponse(str(file_path), media_type=content_type)
 
 # Now mount the static files for infographics (after the download endpoint)
 app.mount("/infographics", CORSAwareStaticFiles(directory=BASE_DIR / "infographics"), name="infographics")

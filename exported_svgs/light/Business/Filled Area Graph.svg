@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.819 179.819">
+  <g id="Color" fill="#00ABF6">
+    <polygon points="21.857 104.246 21.857 157.51 173.086 157.51 173.073 27.685 138.224 83.889 114.401 64.037 79.352 122.454 21.857 104.246" />
+  </g>
+  <g id="Grey" fill="#282828">
+    <polygon points="13.469 166.351 179.819 166.351 179.819 179.819 0 179.819 0 0 13.469 0 13.469 166.351" fill-rule="evenodd" />
+  </g>
+</svg>

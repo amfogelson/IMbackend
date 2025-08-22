@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.82 155.728">
+  <g id="Color" fill="#00ABF6">
+    <polygon points="119.015 50.41 89.91 0 60.806 50.41 119.015 50.41" />
+  </g>
+  <g id="Grey" fill="#282828">
+    <polygon points="150.737 105.354 123.895 58.863 55.925 58.863 29.083 105.354 150.737 105.354" />
+    <polygon points="179.82 155.728 155.617 113.808 24.203 113.808 0 155.728 179.82 155.728" />
+  </g>
+</svg>

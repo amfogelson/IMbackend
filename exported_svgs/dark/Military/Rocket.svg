@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 179.819 179.849">
+  <g id="Color" fill="#00ABF6">
+    <rect x="101.522" y="44.357" width="24.833" height="43.106" transform="translate(-13.233 99.871) rotate(-45)" />
+    <polygon points="129.419 20.772 179.819 0 159.074 50.428 129.419 20.772" fill-rule="evenodd" />
+  </g>
+  <g id="Grey" fill="#D3D3D3">
+    <rect x="34.19" y="95.144" width="57.922" height="43.106" transform="translate(-64.021 78.834) rotate(-45)" />
+    <rect x="81.97" y="63.906" width="24.839" height="43.105" transform="translate(-32.782 91.777) rotate(-45.002)" />
+    <rect x="121.067" y="24.809" width="24.839" height="43.105" transform="translate(6.314 107.968) rotate(-45)" />
+    <path d="M97.909,116.393l9.866,32.803c-7.477,10.218-14.954,20.436-22.431,30.653l-25.439-25.452,38.004-38.004Z" />
+    <path d="M63.455,81.939l-32.802-9.866c-10.218,7.477-20.435,14.953-30.653,22.43l25.451,25.44,38.004-38.004Z" />
+    <rect x="27.805" y="129.977" width="18.281" height="25.858" transform="translate(-90.229 67.981) rotate(-45)" />
+    <polygon points="10.974 168.878 18.807 155.594 5.518 156.307 24.402 142.185 37.666 155.449 23.545 174.333 24.234 160.894 10.974 168.878" fill-rule="evenodd" />
+  </g>
+</svg>
