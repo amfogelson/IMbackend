@@ -508,6 +508,8 @@ async def export_png(req: ExportPngRequest):
             filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
+    elif req.type == "bcore-logo":
+        filepath = BASE_DIR / "frontend" / "public" / "Bcore_Images_Video" / "Logos" / req.icon_name
     else:
         return {"error": "Invalid type"}
     
@@ -561,6 +563,8 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
             filepath = COLORFUL_ICON_DIR / req.folder / req.icon_name
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
+    elif req.type == "bcore-logo":
+        filepath = BASE_DIR / "frontend" / "public" / "Bcore_Images_Video" / "Logos" / req.icon_name
     else:
         return {"error": "Invalid type"}
     

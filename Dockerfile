@@ -4,12 +4,17 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (optional, if needed for cairosvg or others)
-RUN apt-get update && apt-get install -y \
+# Install system dependencies with better error handling
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    libpango-1.0-0 \
-    libcairo2 \
-    libgdk-pixbuf2.0-0 \
+    g++ \
+    libpango1.0-dev \
+    libcairo2-dev \
+    libgdk-pixbuf2.0-dev \
+    libffi-dev \
+    libjpeg-dev \
+    libpng-dev \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
