@@ -1247,9 +1247,17 @@ async def respond_to_feedback(req: FeedbackResponseRequest):
 @app.get("/infographics")
 def list_infographics():
     infographics_dir = os.path.join(os.path.dirname(__file__), "../infographics")
-    files = [f for f in os.listdir(infographics_dir) if f.lower().endswith('.png')]
-    # Return list of PNGs (filenames)
-    return {"infographics": files}
+    mapping_file = os.path.join(infographics_dir, "mapping.json")
+    
+    try:
+        with open(mapping_file, 'r', encoding='utf-8') as f:
+            mapping_data = json.load(f)
+        return {"infographics": mapping_data}
+    except Exception as e:
+        print(f"[ERROR] Failed to load mapping.json: {e}")
+        # Fallback to just listing PNG files
+        files = [f for f in os.listdir(infographics_dir) if f.lower().endswith('.png')]
+        return {"infographics": files}
 
 @app.get("/infographics/{infographic_name}/download")
 def download_infographic_pptx(infographic_name: str, theme: str = "light"):
@@ -1379,7 +1387,18 @@ def serve_bcore_file(filename: str):
         file_path = bcore_dir / "Logos" / decoded_filename
     # Check if it's an image file and look in Images subfolder
     elif decoded_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        file_path = bcore_dir / "Images" / decoded_filename
+        # First check if it's a preview image in Branding folder
+        branding_preview_path = bcore_dir / "Branding" / decoded_filename
+        if branding_preview_path.exists():
+            file_path = branding_preview_path
+        else:
+            file_path = bcore_dir / "Images" / decoded_filename
+    # Check if it's a PowerPoint file and look in Branding subfolder
+    elif decoded_filename.lower().endswith(('.pptx', '.ppt')):
+        file_path = bcore_dir / "Branding" / decoded_filename
+    # Check if it's a branding asset and look in Branding subfolder
+    elif decoded_filename.lower().endswith(('.pdf', '.docx', '.doc')):
+        file_path = bcore_dir / "Branding" / decoded_filename
     else:
         file_path = bcore_dir / decoded_filename
     
@@ -1408,6 +1427,16 @@ def serve_bcore_file(filename: str):
         content_type = "image/gif"
     elif decoded_filename.lower().endswith('.svg'):
         content_type = "image/svg+xml"
+    elif decoded_filename.lower().endswith('.pptx'):
+        content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    elif decoded_filename.lower().endswith('.ppt'):
+        content_type = "application/vnd.ms-powerpoint"
+    elif decoded_filename.lower().endswith('.pdf'):
+        content_type = "application/pdf"
+    elif decoded_filename.lower().endswith('.docx'):
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif decoded_filename.lower().endswith('.doc'):
+        content_type = "application/msword"
     
     return FileResponse(
         str(file_path), 
@@ -1441,7 +1470,18 @@ async def download_bcore_file(request: dict):
             file_path = bcore_dir / "Logos" / decoded_filename
         # Check if it's an image file and look in Images subfolder
         elif decoded_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-            file_path = bcore_dir / "Images" / decoded_filename
+            # First check if it's a preview image in Branding folder
+            branding_preview_path = bcore_dir / "Branding" / decoded_filename
+            if branding_preview_path.exists():
+                file_path = branding_preview_path
+            else:
+                file_path = bcore_dir / "Images" / decoded_filename
+        # Check if it's a PowerPoint file and look in Branding subfolder
+        elif decoded_filename.lower().endswith(('.pptx', '.ppt')):
+            file_path = bcore_dir / "Branding" / decoded_filename
+        # Check if it's a branding asset and look in Branding subfolder
+        elif decoded_filename.lower().endswith(('.pdf', '.docx', '.doc')):
+            file_path = bcore_dir / "Branding" / decoded_filename
         else:
             file_path = bcore_dir / decoded_filename
         
@@ -1473,6 +1513,16 @@ async def download_bcore_file(request: dict):
             content_type = "image/gif"
         elif decoded_filename.lower().endswith('.svg'):
             content_type = "image/svg+xml"
+        elif decoded_filename.lower().endswith('.pptx'):
+            content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        elif decoded_filename.lower().endswith('.ppt'):
+            content_type = "application/vnd.ms-powerpoint"
+        elif decoded_filename.lower().endswith('.pdf'):
+            content_type = "application/pdf"
+        elif decoded_filename.lower().endswith('.docx'):
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif decoded_filename.lower().endswith('.doc'):
+            content_type = "application/msword"
         
         return Response(
             content=file_content,
