@@ -567,7 +567,11 @@ async def export_png(req: ExportPngRequest):
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     elif req.type == "bcore-logo":
-        filepath = BASE_DIR / "frontend" / "public" / "Bcore_Images_Video" / "Logos" / req.icon_name
+        # Use absolute path to ensure correct resolution
+        base_dir = Path(__file__).parent.absolute()
+        filepath = base_dir / "bcore_files" / "Logos" / req.icon_name
+        print(f"[DEBUG] PNG export - BCORE logo path: {filepath}")
+        print(f"[DEBUG] PNG export - File exists: {filepath.exists()}")
     else:
         return {"error": "Invalid type"}
     
@@ -579,11 +583,17 @@ async def export_png(req: ExportPngRequest):
         with open(filepath, 'r', encoding='utf-8') as f:
             svg_content = f.read()
         
+        print(f"[DEBUG] PNG export - SVG content length: {len(svg_content)}")
+        
         # Convert SVG to PNG
         png_data = cairosvg.svg2png(bytestring=svg_content.encode('utf-8'))
         
+        print(f"[DEBUG] PNG export - PNG data length: {len(png_data)}")
+        
         # Create filename for PNG
         png_filename = req.icon_name.replace('.svg', '.png')
+        
+        print(f"[DEBUG] PNG export - Filename: {png_filename}")
         
         return StreamingResponse(
             io.BytesIO(png_data),
@@ -591,12 +601,15 @@ async def export_png(req: ExportPngRequest):
             headers={"Content-Disposition": f"attachment; filename={png_filename}"}
         )
     except Exception as e:
+        print(f"[DEBUG] PNG export - Error: {e}")
         return {"error": f"Failed to convert to PNG: {str(e)}"}
 
 @app.post("/export-svg")
 async def export_svg(req: ExportPngRequest):  # Reuse the same request model
+    print(f"[DEBUG] Export SVG request received: {req}")
     # Get the mode from the request, default to light
     mode = getattr(req, 'mode', 'light')
+    print(f"[DEBUG] Mode: {mode}, Type: {req.type}, Icon name: {req.icon_name}")
     
     if req.type == "icon":
         if req.folder == "Root":
@@ -622,7 +635,13 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
     elif req.type == "flag":
         filepath = FLAG_DIR / req.icon_name
     elif req.type == "bcore-logo":
-        filepath = BASE_DIR / "frontend" / "public" / "Bcore_Images_Video" / "Logos" / req.icon_name
+        # Use absolute path to ensure correct resolution
+        base_dir = Path(__file__).parent.absolute()
+        filepath = base_dir / "bcore_files" / "Logos" / req.icon_name
+        print(f"[DEBUG] Base directory: {base_dir}")
+        print(f"[DEBUG] BCORE logo path: {filepath}")
+        print(f"[DEBUG] File exists: {filepath.exists()}")
+        print(f"[DEBUG] Current working directory: {Path.cwd()}")
     else:
         return {"error": "Invalid type"}
     
@@ -634,9 +653,13 @@ async def export_svg(req: ExportPngRequest):  # Reuse the same request model
         with open(filepath, 'r', encoding='utf-8') as f:
             svg_content = f.read()
         
+        print(f"[DEBUG] SVG content length: {len(svg_content)}")
+        print(f"[DEBUG] SVG content preview: {svg_content[:200]}...")
+        
         # Return the SVG content as text for copy functionality
         return {"svg_content": svg_content}
     except Exception as e:
+        print(f"[DEBUG] Error reading SVG file: {e}")
         return {"error": f"Failed to export SVG: {str(e)}"}
 
 @app.post("/download-svg")
@@ -1317,7 +1340,27 @@ def serve_bcore_thumbnail(filename: str):
         raise HTTPException(status_code=404, detail=f"Thumbnail not found: {thumbnail_filename_lower} or {thumbnail_filename_upper}")
     
     print(f"[DEBUG] Serving thumbnail: {thumbnail_path}")
-    return FileResponse(str(thumbnail_path), media_type="image/png")
+    return FileResponse(
+        str(thumbnail_path), 
+        media_type="image/png",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
+
+@app.options("/bcore/{filename:path}")
+async def options_bcore_file(filename: str):
+    """Handle CORS preflight requests for BCORE files"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
 
 @app.get("/bcore/{filename:path}")
 def serve_bcore_file(filename: str):
@@ -1366,7 +1409,84 @@ def serve_bcore_file(filename: str):
     elif decoded_filename.lower().endswith('.svg'):
         content_type = "image/svg+xml"
     
-    return FileResponse(str(file_path), media_type=content_type)
+    return FileResponse(
+        str(file_path), 
+        media_type=content_type,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
+
+@app.post("/bcore-download")
+async def download_bcore_file(request: dict):
+    """Download BCORE files with proper CORS handling"""
+    try:
+        filename = request.get("filename")
+        if not filename:
+            raise HTTPException(status_code=400, detail="Filename is required")
+        
+        # Decode URL-encoded filename
+        decoded_filename = unquote(filename)
+        
+        # Use local BCORE directory in the backend
+        bcore_dir = Path(__file__).parent / "bcore_files"
+        
+        # Check if it's a video file and look in Videos subfolder
+        if decoded_filename.lower().endswith(('.mp4', '.mov', '.avi')):
+            file_path = bcore_dir / "Videos" / decoded_filename
+        # Check if it's an SVG file and look in Logos subfolder
+        elif decoded_filename.lower().endswith('.svg'):
+            file_path = bcore_dir / "Logos" / decoded_filename
+        # Check if it's an image file and look in Images subfolder
+        elif decoded_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            file_path = bcore_dir / "Images" / decoded_filename
+        else:
+            file_path = bcore_dir / decoded_filename
+        
+        print(f"[DEBUG] BCORE download request for: {filename}")
+        print(f"[DEBUG] Decoded filename: {decoded_filename}")
+        print(f"[DEBUG] file_path: {file_path}")
+        print(f"[DEBUG] file exists: {file_path.exists()}")
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        
+        # Read the file content
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+        
+        # Determine content type based on file extension
+        content_type = "application/octet-stream"
+        if decoded_filename.lower().endswith('.mp4'):
+            content_type = "video/mp4"
+        elif decoded_filename.lower().endswith('.mov'):
+            content_type = "video/quicktime"
+        elif decoded_filename.lower().endswith('.avi'):
+            content_type = "video/x-msvideo"
+        elif decoded_filename.lower().endswith('.png'):
+            content_type = "image/png"
+        elif decoded_filename.lower().endswith('.jpg') or decoded_filename.lower().endswith('.jpeg'):
+            content_type = "image/jpeg"
+        elif decoded_filename.lower().endswith('.gif'):
+            content_type = "image/gif"
+        elif decoded_filename.lower().endswith('.svg'):
+            content_type = "image/svg+xml"
+        
+        return Response(
+            content=file_content,
+            media_type=content_type,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Content-Disposition": f"attachment; filename={decoded_filename}"
+            }
+        )
+    except Exception as e:
+        print(f"[DEBUG] Error in download_bcore_file: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Now mount the static files for infographics (after the download endpoint)
 app.mount("/infographics", CORSAwareStaticFiles(directory=BASE_DIR / "infographics"), name="infographics")
